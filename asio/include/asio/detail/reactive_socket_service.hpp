@@ -38,6 +38,9 @@
 #include "asio/detail/socket_holder.hpp"
 #include "asio/detail/socket_ops.hpp"
 #include "asio/detail/socket_types.hpp"
+/* multiple_datagram_buffers patch */
+#include "asio/multiple_datagram_buffers.hpp"
+/* multiple_datagram_buffers patch */
 
 #include "asio/detail/push_options.hpp"
 
@@ -390,6 +393,12 @@ public:
     ASIO_ERROR_LOCATION(ec);
     return 0;
   }
+
+/* multiple_datagram_buffers patch */
+#if defined(ASIO_HAS_RECVMMSG)
+
+#endif // defined(ASIO_HAS_RECVMMSG)
+/* multiple_datagram_buffers patch */
 
   // Start an asynchronous receive. The buffer for the data being received and
   // the sender_endpoint object must both be valid for the lifetime of the

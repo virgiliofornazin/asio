@@ -1691,6 +1691,15 @@
 #   endif // (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 8)
 #  endif // defined(ASIO_HAS_EPOLL)
 # endif // !defined(ASIO_HAS_TIMERFD)
+/* multiple_datagram_buffers patch */
+# if !defined(ASIO_HAS_RECVMMSG)
+#  if !defined(ASIO_DISABLE_RECVMMSG)
+#   if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33)
+#    define ASIO_HAS_RECVMMSG 1
+#   endif // LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,45)
+#  endif // !defined(ASIO_DISABLE_RECVMMSG)
+# endif // !defined(ASIO_HAS_RECVMMSG)
+/* multiple_datagram_buffers patch */
 #endif // defined(__linux__)
 
 // Linux: io_uring is used instead of epoll.

@@ -1,53 +1,48 @@
-#ifndef ASIO_MULTIPLE_BUFFERS_HPP
-#define ASIO_MULTIPLE_BUFFERS_HPP
+#ifndef ASIO_MULTIPLE_DATAGRAM_BUFFERS_HPP
+#define ASIO_MULTIPLE_DATAGRAM_BUFFERS_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
 # pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
+#include "asio/detail/config.hpp"
 #include <cstddef>
 #include <vector>
 
-#if defined(__linux__)
-# define ASIO_MULTIPLE_BUFFERS_PER_SYSCALL 1
-#endif // defined(__linux__)
+#if defined(ASIO_HAS_RECVMMSG)
+# define ASIO_MULTIPLE_DATAGRAMS_PER_SYSCALL 1024
+#endif // defined(ASIO_HAS_RECVMMSG)
 
-#if !defined(ASIO_MULTIPLE_BUFFERS_PER_SYSCALL)
-# define ASIO_MULTIPLE_BUFFERS_PER_SYSCALL 1
-#endif // !defined(ASIO_MULTIPLE_BUFFERS_PER_SYSCALL)
+#if !defined(ASIO_MULTIPLE_DATAGRAMS_PER_SYSCALL)
+# define ASIO_MULTIPLE_DATAGRAMS_PER_SYSCALL 1
+#endif // !defined(ASIO_MULTIPLE_DATAGRAMS_PER_SYSCALL)
 
 namespace asio {
 
-namespace detail {
-
 template <typename BufferSequence, typename EndpointType>
-struct multiple_buffers_item {
-
+struct single_datagram_buffer {
   BufferSequence buffer;
   EndpointType endpoint;
   std::size_t transferred;
 
-  multiple_buffers_item() {
+  single_datagram_buffer() {
     transferred = 0;
   }
 
-  multiple_buffers_item(const BufferSequence& buffer_)
+  explicit single_datagram_buffer(const BufferSequence& buffer_)
     : buffer(buffer_), transferred(0) {
   }
 
-  multiple_buffers_item(const BufferSequence& buffer_, const EndpointType& endpoint_)
-    : buffer(buffer_), endpoint(endpoint_), transferred(0) {
+  explicit single_datagram_buffer(const BufferSequence& buffer_,
+    const EndpointType& endpoint_)
+      : buffer(buffer_), endpoint(endpoint_), transferred(0) {
   }
-
 };
 
-} // namespace detail
-
 template <typename BufferSequence, typename EndpointType>
-class multiple_buffers {
+class multiple_datagram_buffers {
 public:
-  typedef detail::multiple_buffers_item<BufferSequence, EndpointType>
-    item_type;
+  typedef single_datagram_buffer<BufferSequence, EndpointType> item_type;
 
 private:
   std::vector<item_type> m_buffers;
@@ -66,7 +61,7 @@ public:
   }
 
   bool full() const {
-    return size() == ASIO_MULTIPLE_BUFFERS_PER_SYSCALL;
+    return size() == ASIO_MULTIPLE_DATAGRAMS_PER_SYSCALL;
   }
 
   item_type& add_buffer(const BufferSequence& buffer) {
@@ -92,4 +87,4 @@ public:
 
 } // namespace asio
 
-#endif // ASIO_MULTIPLE_BUFFERS_HPP
+#endif // ASIO_MULTIPLE_DATAGRAM_BUFFERS_HPP
