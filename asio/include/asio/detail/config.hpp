@@ -4,6 +4,9 @@
 //
 // Copyright (c) 2003-2022 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
+// Support for multiple datagram buffers code patches on Linux operating system
+// Copyright (c) 2023 virgilio Alexandre Fornazin (virgiliofornazin at gmail dot com)
+//
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
@@ -1692,13 +1695,13 @@
 #  endif // defined(ASIO_HAS_EPOLL)
 # endif // !defined(ASIO_HAS_TIMERFD)
 /* multiple_datagram_buffers patch */
-# if !defined(ASIO_HAS_RECVMMSG)
-#  if !defined(ASIO_DISABLE_RECVMMSG)
+# if !defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+#  if !defined(ASIO_DISABLE_MULTIPLE_DATAGRAM_BUFFER_IO)
 #   if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33)
-#    define ASIO_HAS_RECVMMSG 1
+#    define ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO 1
 #   endif // LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,45)
-#  endif // !defined(ASIO_DISABLE_RECVMMSG)
-# endif // !defined(ASIO_HAS_RECVMMSG)
+#  endif // !defined(ASIO_DISABLE_MULTIPLE_DATAGRAM_BUFFER_IO)
+# endif // !defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
 /* multiple_datagram_buffers patch */
 #endif // defined(__linux__)
 
@@ -1706,6 +1709,11 @@
 #if !defined(ASIO_HAS_IO_URING_AS_DEFAULT)
 # if !defined(ASIO_HAS_EPOLL) && defined(ASIO_HAS_IO_URING)
 #  define ASIO_HAS_IO_URING_AS_DEFAULT 1
+/* multiple_datagram_buffers patch */
+#  if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+#   undef ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO
+#  endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+/* multiple_datagram_buffers patch */
 # endif // !defined(ASIO_HAS_EPOLL) && defined(ASIO_HAS_IO_URING)
 #endif // !defined(ASIO_HAS_IO_URING_AS_DEFAULT)
 

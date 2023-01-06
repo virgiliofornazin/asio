@@ -42,6 +42,10 @@
 # include <utility>
 #endif // defined(ASIO_HAS_MOVE)
 
+/* multiple_datagram_buffers patch */
+#include "asio/multiple_datagram_buffers.hpp"
+/* multiple_datagram_buffers patch */
+
 #include "asio/detail/push_options.hpp"
 
 namespace asio {

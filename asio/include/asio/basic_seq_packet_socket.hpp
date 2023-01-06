@@ -58,6 +58,11 @@ class basic_seq_packet_socket
 private:
   class initiate_async_send;
   class initiate_async_receive_with_flags;
+/* multiple_datagram_buffers patch */  
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+  class initiate_async_send_multiple_datagram_buffers;
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+/* multiple_datagram_buffers patch */  
 
 public:
   /// The type of the executor associated with the object.
@@ -347,6 +352,65 @@ public:
   {
   }
 
+/* multiple_datagram_buffers patch */  
+  template <typename ConstBufferSequence>
+  std::size_t send_multiple_datagram_buffers(
+      multiple_datagram_buffers<ConstBufferSequence, endpoint_type>& buffers,
+      socket_base::message_flags flags)
+  {
+    if (buffers.empty()) {
+      throw std::logic_error("empty buffers");
+    }
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    if (buffers.size() > 1) {
+      asio::error_code ec;
+      std::size_t s = this->impl_.get_service().send_multiple_datagram_buffers(
+          this->impl_.get_implementation(), buffers, flags, ec);
+      asio::detail::throw_error(ec, "send");
+      return s;
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    std::size_t result = 0;
+    for (std::size_t i = 0; i < buffers.size(); ++i) {
+      typename multiple_datagram_buffers<ConstBufferSequence, 
+        endpoint_type>::item_type& buffer = buffers.at(i);
+      buffer.transferred = send(buffer.buffer, flags);
+      if (buffer.transferred == 0) {
+        break;
+      }
+      ++result;
+    }
+    return result;
+  }
+
+  template <typename ConstBufferSequence>
+  std::size_t send_multiple_datagram_buffers(
+      multiple_datagram_buffers<ConstBufferSequence, endpoint_type>& buffers,
+      socket_base::message_flags flags, asio::error_code& ec)
+  {
+    if (buffers.empty()) {
+      throw std::logic_error("empty buffers");
+    }
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    if (buffers.size() > 1) {
+      return this->impl_.get_service().send_multiple_datagram_buffers(
+          this->impl_.get_implementation(), buffers, flags, ec);
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    std::size_t result = 0;
+    for (std::size_t i = 0; i < buffers.size(); ++i) {
+      typename multiple_datagram_buffers<ConstBufferSequence, 
+        endpoint_type>::item_type& buffer = buffers.at(i);
+      buffer.transferred = send(buffer.buffer, flags, ec);
+      if (buffer.transferred == 0) {
+        break;
+      }
+      ++result;
+    }
+    return result;
+  }
+/* multiple_datagram_buffers patch */
+
   /// Send some data on the socket.
   /**
    * This function is used to send data on the sequenced packet socket. The
@@ -406,6 +470,52 @@ public:
     return this->impl_.get_service().send(
         this->impl_.get_implementation(), buffers, flags, ec);
   }
+  
+/* multiple_datagram_buffers patch */
+  template <typename ConstBufferSequence,
+      ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
+        std::size_t)) WriteToken
+          ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
+  ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(WriteToken,
+      void (asio::error_code, std::size_t))
+  async_send_multiple_datagram_buffers(
+      multiple_datagram_buffers<ConstBufferSequence, endpoint_type>& buffers,
+      socket_base::message_flags flags,
+      ASIO_MOVE_ARG(WriteToken) token
+        ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
+    ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
+      async_initiate<WriteToken,
+        void (asio::error_code, std::size_t)>(
+          declval<initiate_async_send_multiple_datagram_buffers>(), 
+            token, buffers, flags)))
+  {
+    if (buffers.empty()) {
+      throw std::logic_error("empty buffers");
+    }
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    if (buffers.size() > 1) {
+      return async_initiate<WriteToken,
+        void (asio::error_code, std::size_t)>(
+          initiate_async_send_multiple_datagram_buffers(this), 
+            token, buffers, flags);
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    /* TODO update callback to add number of messages sent, 
+       number of current message being callback'ed */
+    std::size_t result = 0;
+    for (std::size_t i = 0; i < buffers.size(); ++i) {
+      typename multiple_datagram_buffers<ConstBufferSequence, 
+          endpoint_type>::item_type& buffer = buffers.at(i);
+      async_send(buffer.buffer, flags, [token,
+        &buffer](asio::error_code ec, std::size_t bytes_transferred) mutable {
+          buffer.transferred = bytes_transferred;
+          token(ec, bytes_transferred);
+        });
+      ++result;
+    }
+    return result;
+  }
+/* multiple_datagram_buffers patch */
 
   /// Start an asynchronous send.
   /**
@@ -475,6 +585,76 @@ public:
       void (asio::error_code, std::size_t)>(
         initiate_async_send(this), token, buffers, flags);
   }
+
+/* multiple_datagram_buffers patch */
+  template <typename MutableBufferSequence>
+  std::size_t receive_multiple_datagram_buffers(
+      multiple_datagram_buffers<MutableBufferSequence, endpoint_type>& buffers,
+      socket_base::message_flags& out_flags)
+  {
+    if (buffers.empty()) {
+      throw std::logic_error("empty buffers");
+    }
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    if (buffers.size() > 1) {
+      asio::error_code ec;
+      std::size_t s = this->impl_.get_service().receive_multiple_datagram_buffers_with_flags(
+          this->impl_.get_implementation(), buffers, 0, out_flags, ec);
+      asio::detail::throw_error(ec, "receive");
+      return s;
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    typename multiple_datagram_buffers<MutableBufferSequence, endpoint_type>::item_type& 
+        buffer = buffers.at(0);
+    buffer.transferred = receive(buffer.buffer, out_flags);
+    return buffer.transferred;
+  }
+
+  template <typename MutableBufferSequence>
+  std::size_t receive_multiple_datagram_buffers(
+      multiple_datagram_buffers<MutableBufferSequence, endpoint_type>& buffers,
+      socket_base::message_flags in_flags,
+      socket_base::message_flags& out_flags)
+  {
+    if (buffers.empty()) {
+      throw std::logic_error("empty buffers");
+    }
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    if (buffers.size() > 1) {
+      asio::error_code ec;
+      std::size_t s = this->impl_.get_service().receive_multiple_datagram_buffers_with_flags(
+          this->impl_.get_implementation(), buffers, in_flags, out_flags, ec);
+      asio::detail::throw_error(ec, "receive");
+      return s;
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    typename multiple_datagram_buffers<MutableBufferSequence, endpoint_type>::item_type& 
+        buffer = buffers.at(0);
+    buffer.transferred = receive(buffer.buffer, in_flags, out_flags);
+    return buffer.transferred;
+  }
+
+  template <typename MutableBufferSequence>
+  std::size_t receive_multiple_datagram_buffers(
+      multiple_datagram_buffers<MutableBufferSequence, endpoint_type>& buffers,
+      socket_base::message_flags in_flags,
+      socket_base::message_flags& out_flags, asio::error_code& ec)
+  {
+    if (buffers.empty()) {
+      throw std::logic_error("empty buffers");
+    }
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    if (buffers.size() > 1) {
+      return this->impl_.get_service().receive_multiple_datagram_buffers_with_flags(
+          this->impl_.get_implementation(), buffers, in_flags, out_flags, ec);
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    typename multiple_datagram_buffers<MutableBufferSequence, endpoint_type>::item_type& 
+        buffer = buffers.at(0);
+    buffer.transferred = receive(buffer.buffer, in_flags, out_flags, ec);
+    return buffer.transferred;
+  }
+/* multiple_datagram_buffers patch */ 
 
   /// Receive some data on the socket.
   /**
@@ -594,6 +774,83 @@ public:
     return this->impl_.get_service().receive_with_flags(
         this->impl_.get_implementation(), buffers, in_flags, out_flags, ec);
   }
+
+/* multiple_datagram_buffers patch */
+  template <typename MutableBufferSequence,
+      ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
+        std::size_t)) ReadToken
+          ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
+  ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(ReadToken,
+      void (asio::error_code, std::size_t))
+  async_receive_multiple_datagram_buffers(
+      multiple_datagram_buffers<MutableBufferSequence, endpoint_type>& buffers,
+      socket_base::message_flags& out_flags,
+      ASIO_MOVE_ARG(ReadToken) token
+        ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
+    ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
+      async_initiate<ReadToken,
+        void (asio::error_code, std::size_t)>(
+          declval<initiate_async_receive_multiple_datagram_buffers_with_flags>(), token,
+          buffers, socket_base::message_flags(0), &out_flags)))
+  {
+    if (buffers.empty()) {
+      throw std::logic_error("empty buffers");
+    }
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    if (buffers.size() > 1) {    
+      return async_initiate<ReadToken,
+        void (asio::error_code, std::size_t)>(
+          initiate_async_receive_multiple_datagram_buffers_with_flags(this), token,
+          buffers, socket_base::message_flags(0), &out_flags);
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    typename multiple_datagram_buffers<MutableBufferSequence, endpoint_type>::item_type& 
+        buffer = buffers.at(0);
+    async_receive(buffer.buffer, out_flags, [token,
+      &buffer](asio::error_code ec, std::size_t bytes_transferred) mutable {
+        buffer.transferred = bytes_transferred;
+        token(ec, bytes_transferred);
+      });
+  }
+  
+  template <typename MutableBufferSequence,
+      ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
+        std::size_t)) ReadToken
+          ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
+  ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(ReadToken,
+      void (asio::error_code, std::size_t))
+  async_receive_multiple_datagram_buffers(
+      multiple_datagram_buffers<MutableBufferSequence, endpoint_type>& buffers,
+      socket_base::message_flags in_flags,
+      socket_base::message_flags& out_flags,
+      ASIO_MOVE_ARG(ReadToken) token
+        ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
+    ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
+      async_initiate<ReadToken,
+        void (asio::error_code, std::size_t)>(
+          declval<initiate_async_receive_multiple_datagram_buffers_with_flags>(),
+          token, buffers, in_flags, &out_flags)))
+  {
+    if (buffers.empty()) {
+      throw std::logic_error("empty buffers");
+    }
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    if (buffers.size() > 1) {    
+      return async_initiate<ReadToken,
+        void (asio::error_code, std::size_t)>(
+          initiate_async_receive_multiple_datagram_buffers_with_flags(this),
+          token, buffers, in_flags, &out_flags);
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    typename multiple_datagram_buffers<MutableBufferSequence, endpoint_type>::item_type& 
+        buffer = buffers.at(0);
+    async_receive(buffer.buffer, in_flags, out_flags, [token,
+      &buffer](asio::error_code ec, std::size_t bytes_transferred) mutable {
+        buffer.transferred = bytes_transferred;
+        token(ec, bytes_transferred);
+      });
+  }
+/* multiple_datagram_buffers patch */
 
   /// Start an asynchronous receive.
   /**

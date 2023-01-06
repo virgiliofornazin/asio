@@ -1,3 +1,14 @@
+//
+// multiple_datagram_buffers.hpp
+// ~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Support for multiple datagram buffers code patches on Linux operating system
+// Copyright (c) 2023 virgilio Alexandre Fornazin (virgiliofornazin at gmail dot com)
+//
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+//
+
 #ifndef ASIO_MULTIPLE_DATAGRAM_BUFFERS_HPP
 #define ASIO_MULTIPLE_DATAGRAM_BUFFERS_HPP
 
@@ -9,9 +20,9 @@
 #include <cstddef>
 #include <vector>
 
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
 # define ASIO_MULTIPLE_DATAGRAMS_PER_SYSCALL 1024
-#endif // defined(ASIO_HAS_RECVMMSG)
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
 
 #if !defined(ASIO_MULTIPLE_DATAGRAMS_PER_SYSCALL)
 # define ASIO_MULTIPLE_DATAGRAMS_PER_SYSCALL 1

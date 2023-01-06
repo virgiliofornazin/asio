@@ -4,6 +4,9 @@
 //
 // Copyright (c) 2003-2022 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
+// Support for multiple datagram buffers code patches on Linux operating system
+// Copyright (c) 2023 virgilio Alexandre Fornazin (virgiliofornazin at gmail dot com)
+//
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
@@ -32,6 +35,11 @@
 #include "asio/detail/reactive_null_buffers_op.hpp"
 #include "asio/detail/reactive_socket_recv_op.hpp"
 #include "asio/detail/reactive_socket_recvmsg_op.hpp"
+/* multiple_datagram_buffers patch */
+#include "asio/multiple_datagram_buffers.hpp"
+#include "asio/detail/reactive_socket_recvmmsg_op.hpp"
+#include "asio/detail/reactive_socket_sendmmsg_op.hpp"
+/* multiple_datagram_buffers patch */
 #include "asio/detail/reactive_socket_send_op.hpp"
 #include "asio/detail/reactive_wait_op.hpp"
 #include "asio/detail/reactor.hpp"
@@ -39,9 +47,6 @@
 #include "asio/detail/socket_holder.hpp"
 #include "asio/detail/socket_ops.hpp"
 #include "asio/detail/socket_types.hpp"
-/* multiple_datagram_buffers patch */
-#include "asio/multiple_datagram_buffers.hpp"
-/* multiple_datagram_buffers patch */
 
 #include "asio/detail/push_options.hpp"
 
@@ -249,14 +254,22 @@ public:
   }
 
 /* multiple_datagram_buffers patch */
-#if defined(ASIO_HAS_RECVMMSG)
-  template <typename ConstBufferSequence>
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+  template <typename ConstBufferSequence, typename EndpointType>
   size_t send_multiple_datagram_buffers(base_implementation_type& impl,
-      const ConstBufferSequence& buffers,
+      multiple_datagram_buffers<ConstBufferSequence, EndpointType>& buffers, 
       socket_base::message_flags flags, asio::error_code& ec)
   {
+    /* TODO */
+    return 0;
   }
-#endif // defined(ASIO_HAS_RECVMMSG)
+
+  size_t send_multiple_datagram_buffers(base_implementation_type& impl, const null_buffers&,
+      socket_base::message_flags, asio::error_code& ec)
+  {
+    return send(impl, null_buffers{}, socket_base::message_flags{}, ec);
+  }
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
 /* multiple_datagram_buffers patch */
 
   // Send the given data to the peer.
@@ -362,6 +375,25 @@ public:
     start_op(impl, reactor::write_op, p.p, is_continuation, false, false);
     p.v = p.p = 0;
   }
+
+/* multiple_datagram_buffers patch */
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+  template <typename MutableBufferSequence, typename EndpointType>
+  size_t receive_multiple_datagram_buffers(base_implementation_type& impl,
+      multiple_datagram_buffers<MutableBufferSequence, EndpointType>& buffers,
+      socket_base::message_flags flags, asio::error_code& ec)
+  {
+    /* TODO */
+    return 0;;
+  }
+
+  size_t receive_multiple_datagram_buffers(base_implementation_type& impl, const null_buffers&,
+      socket_base::message_flags, asio::error_code& ec)
+  {
+    return receive(impl, null_buffers{}, socket_base::message_flags{}, ec);
+  }
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+/* multiple_datagram_buffers patch */
 
   // Receive some data from the peer. Returns the number of bytes received.
   template <typename MutableBufferSequence>
@@ -475,6 +507,30 @@ public:
         p.p, is_continuation, false, false);
     p.v = p.p = 0;
   }
+
+/* multiple_datagram_buffers patch */
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+  template <typename MutableBufferSequence, typename EndpointType>
+  size_t receive_multiple_datagram_buffers_with_flags(base_implementation_type& impl,
+      multiple_datagram_buffers<MutableBufferSequence, EndpointType>& buffers,
+      socket_base::message_flags in_flags,
+      socket_base::message_flags& out_flags, asio::error_code& ec)
+  {
+    /* TODO */
+    return 0;
+  }
+
+  template <typename MutableBufferSequence>
+  size_t receive_multiple_datagram_buffers_with_flags(base_implementation_type& impl,
+      const null_buffers&, socket_base::message_flags,
+      socket_base::message_flags& out_flags, asio::error_code& ec)
+  {
+    /* TODO */
+    return receive_with_flags(impl, null_buffers{}, socket_base::message_flags{}, out_flags, ec);
+  }
+
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+/* multiple_datagram_buffers patch */
 
   // Receive some data with associated flags. Returns the number of bytes
   // received.

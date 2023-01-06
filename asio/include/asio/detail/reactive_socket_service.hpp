@@ -4,6 +4,9 @@
 //
 // Copyright (c) 2003-2022 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
+// Support for multiple datagram buffers code patches on Linux operating system
+// Copyright (c) 2023 virgilio Alexandre Fornazin (virgiliofornazin at gmail dot com)
+//
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
@@ -38,9 +41,6 @@
 #include "asio/detail/socket_holder.hpp"
 #include "asio/detail/socket_ops.hpp"
 #include "asio/detail/socket_types.hpp"
-/* multiple_datagram_buffers patch */
-#include "asio/multiple_datagram_buffers.hpp"
-/* multiple_datagram_buffers patch */
 
 #include "asio/detail/push_options.hpp"
 
@@ -233,6 +233,25 @@ public:
     ASIO_ERROR_LOCATION(ec);
     return ec;
   }
+  
+/* multiple_datagram_buffers patch */
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+  template <typename ConstBufferSequence>
+  size_t send_multiple_datagram_buffers_to(implementation_type& impl,
+      multiple_datagram_buffers<ConstBufferSequence, endpoint_type>& buffers, 
+      socket_base::message_flags flags, asio::error_code& ec)
+  {
+    /* TODO */
+    return 0;
+  }
+
+  size_t send_multiple_datagram_buffers_to(implementation_type& impl, const null_buffers&,
+      socket_base::message_flags, asio::error_code& ec)
+  {
+    return send_to(impl, null_buffers{}, endpoint_type{}, socket_base::message_flags{}, ec);
+  }
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+/* multiple_datagram_buffers patch */
 
   // Send a datagram to the specified endpoint. Returns the number of bytes
   // sent.
@@ -346,6 +365,26 @@ public:
     p.v = p.p = 0;
   }
 
+/* multiple_datagram_buffers patch */
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+  template <typename MutableBufferSequence>
+  size_t receive_multiple_datagram_buffers_from(implementation_type& impl,
+      multiple_datagram_buffers<MutableBufferSequence, endpoint_type>& buffers, 
+      socket_base::message_flags flags, asio::error_code& ec)
+  {
+    /* TODO */
+    return 0;
+  }
+
+  size_t receive_multiple_datagram_buffers_from(implementation_type& impl, const null_buffers&,
+      socket_base::message_flags, asio::error_code& ec)
+  {
+    endpoint_type unused;
+    return receive_from(impl, null_buffers{}, unused, socket_base::message_flags{}, ec);
+  }
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+/* multiple_datagram_buffers patch */  
+
   // Receive a datagram with the endpoint of the sender. Returns the number of
   // bytes received.
   template <typename MutableBufferSequence>
@@ -393,12 +432,6 @@ public:
     ASIO_ERROR_LOCATION(ec);
     return 0;
   }
-
-/* multiple_datagram_buffers patch */
-#if defined(ASIO_HAS_RECVMMSG)
-
-#endif // defined(ASIO_HAS_RECVMMSG)
-/* multiple_datagram_buffers patch */
 
   // Start an asynchronous receive. The buffer for the data being received and
   // the sender_endpoint object must both be valid for the lifetime of the

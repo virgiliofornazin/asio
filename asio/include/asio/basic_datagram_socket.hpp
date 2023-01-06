@@ -4,6 +4,9 @@
 //
 // Copyright (c) 2003-2022 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
+// Support for multiple datagram buffers code patches on Linux operating system
+// Copyright (c) 2023 virgilio Alexandre Fornazin (virgiliofornazin at gmail dot com)
+//
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
@@ -23,9 +26,6 @@
 #include "asio/detail/throw_error.hpp"
 #include "asio/detail/type_traits.hpp"
 #include "asio/error.hpp"
-/* multiple_datagram_buffers patch */
-#include "asio/multiple_datagram_buffers.hpp"
-/* multiple_datagram_buffers patch */
 
 #include "asio/detail/push_options.hpp"
 
@@ -352,7 +352,7 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       asio::error_code ec;
       std::size_t s = this->impl_.get_service().send_multiple_datagram_buffers(
@@ -360,11 +360,18 @@ public:
       asio::detail::throw_error(ec, "send_multiple_datagram_buffers");
       return s;
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
-    typename multiple_datagram_buffers<ConstBufferSequence, endpoint_type>::item_type& 
-        buffer = buffers.at(0);
-    buffer.transferred = send(buffer.buffer);
-    return buffer.transferred;
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    std::size_t result = 0;
+    for (std::size_t i = 0; i < buffers.size(); ++i) {
+      typename multiple_datagram_buffers<ConstBufferSequence, 
+          endpoint_type>::item_type& buffer = buffers.at(i);
+      buffer.transferred = send(buffer.buffer);
+      if (buffer.transferred == 0) {
+        break;
+      }
+      ++result;
+    }
+    return result;
   }
   
   template <typename ConstBufferSequence>
@@ -375,7 +382,7 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       asio::error_code ec;
       std::size_t s = this->impl_.get_service().send_multiple_datagram_buffers(
@@ -383,11 +390,18 @@ public:
       asio::detail::throw_error(ec, "send");
       return s;
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
-    typename multiple_datagram_buffers<ConstBufferSequence, endpoint_type>::item_type& 
-        buffer = buffers.at(0);
-    buffer.transferred = send(buffer.buffer, flags);
-    return buffer.transferred;
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    std::size_t result = 0;
+    for (std::size_t i = 0; i < buffers.size(); ++i) {
+      typename multiple_datagram_buffers<ConstBufferSequence, 
+          endpoint_type>::item_type& buffer = buffers.at(i);
+      buffer.transferred = send(buffer.buffer, flags);
+      if (buffer.transferred == 0) {
+        break;
+      }
+      ++result;
+    }
+    return result;
   }
   /* multiple_datagram_buffers patch */
 
@@ -496,21 +510,28 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       return async_initiate<WriteToken,
         void (asio::error_code, std::size_t)>(
           initiate_async_send_multiple_datagram_buffers(this), token,
           buffers, socket_base::message_flags(0));
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
-    typename multiple_datagram_buffers<ConstBufferSequence, endpoint_type>::item_type& 
-        buffer = buffers.at(0);
-    async_send(buffer.buffer, [token,
-      &buffer](asio::error_code ec, std::size_t bytes_transferred) mutable {
-        buffer.transferred = bytes_transferred;
-        token(ec, bytes_transferred);
-      });
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    /* TODO update callback to add number of messages sent, 
+       number of current message being callback'ed */
+    std::size_t result = 0;
+    for (std::size_t i = 0; i < buffers.size(); ++i) {
+      typename multiple_datagram_buffers<ConstBufferSequence, 
+          endpoint_type>::item_type& buffer = buffers.at(i);
+      async_send(buffer.buffer, [token,
+        &buffer](asio::error_code ec, std::size_t bytes_transferred) mutable {
+          buffer.transferred = bytes_transferred;
+          token(ec, bytes_transferred);
+        });
+      ++result;
+    }
+    return result;
   }
   
   template <typename ConstBufferSequence,
@@ -533,20 +554,25 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       return async_initiate<WriteToken,
         void (asio::error_code, std::size_t)>(
           initiate_async_send_multiple_datagram_buffers(this), token, buffers, flags);
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
-    typename multiple_datagram_buffers<ConstBufferSequence, endpoint_type>::item_type& 
-        buffer = buffers.at(0);
-    async_send(buffer.buffer, flags, [token,
-      &buffer](asio::error_code ec, std::size_t bytes_transferred) mutable {
-        buffer.transferred = bytes_transferred;
-        token(ec, bytes_transferred);
-      });
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    /* TODO update callback to add number of messages sent, 
+       number of current message being callback'ed */
+    std::size_t result = 0;
+    for (std::size_t i = 0; i < buffers.size(); ++i) {
+      typename multiple_datagram_buffers<ConstBufferSequence, 
+          endpoint_type>::item_type& buffer = buffers.at(i);
+      async_send(buffer.buffer, flags, [token,
+        &buffer](asio::error_code ec, std::size_t bytes_transferred) mutable {
+          buffer.transferred = bytes_transferred;
+          token(ec, bytes_transferred);
+        });
+    }
   }
   /* multiple_datagram_buffers patch */
 
@@ -694,7 +720,7 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       asio::error_code ec;
       std::size_t s = this->impl_.get_service().send_multiple_datagram_buffers_to(
@@ -702,11 +728,18 @@ public:
       asio::detail::throw_error(ec, "send_multiple_datagram_buffers_to");
       return s;
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
-    typename multiple_datagram_buffers<ConstBufferSequence, endpoint_type>::item_type& 
-        buffer = buffers.at(0);
-    buffer.transferred = send_to(buffer.buffer, buffer.endpoint);
-    return buffer.transferred;
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    std::size_t result = 0;
+    for (std::size_t i = 0; i < buffers.size(); ++i) {
+      typename multiple_datagram_buffers<ConstBufferSequence, 
+          endpoint_type>::item_type& buffer = buffers.at(i);
+      buffer.transferred = send_to(buffer.buffer, buffer.endpoint);
+      if (buffer.transferred == 0) {
+        break;
+      }
+      ++result;
+    }
+    return result;
   }
   
   template <typename ConstBufferSequence>
@@ -717,7 +750,7 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       asio::error_code ec;
       std::size_t s = this->impl_.get_service().send_multiple_datagram_buffers_to(
@@ -725,11 +758,18 @@ public:
       asio::detail::throw_error(ec, "send_multiple_datagram_buffers_to");
       return s;
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
-    typename multiple_datagram_buffers<ConstBufferSequence, endpoint_type>::item_type& 
-        buffer = buffers.at(0);
-    buffer.transferred = send_to(buffer.buffer, buffer.endpoint, flags);
-    return buffer.transferred;
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    std::size_t result = 0;
+    for (std::size_t i = 0; i < buffers.size(); ++i) {
+      typename multiple_datagram_buffers<ConstBufferSequence, 
+          endpoint_type>::item_type& buffer = buffers.at(i);
+      buffer.transferred = send_to(buffer.buffer, buffer.endpoint, flags);
+      if (buffer.transferred == 0) {
+        break;
+      }
+      ++result;
+    }
+    return result;
   }
   
   template <typename ConstBufferSequence>
@@ -740,16 +780,23 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       return this->impl_.get_service().send_multiple_datagram_buffers_to(
         this->impl_.get_implementation(), buffers, flags, ec);
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
-    typename multiple_datagram_buffers<ConstBufferSequence, endpoint_type>::item_type& 
-        buffer = buffers.at(0);
-    buffer.transferred = send_to(buffer.buffer, buffer.endpoint, flags, ec);
-    return buffer.transferred;
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    std::size_t result = 0;
+    for (std::size_t i = 0; i < buffers.size(); ++i) {
+      typename multiple_datagram_buffers<ConstBufferSequence, 
+          endpoint_type>::item_type& buffer = buffers.at(i);
+      buffer.transferred = send_to(buffer.buffer, buffer.endpoint, flags, ec);
+      if (buffer.transferred == 0) {
+        break;
+      }
+      ++result;
+    }
+    return result;
   }
   /* multiple_datagram_buffers patch */
 
@@ -861,16 +908,16 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       return async_initiate<WriteToken,
         void (asio::error_code, std::size_t)>(
           initiate_async_send_multiple_datagram_buffers_to(this), token, buffers,
           socket_base::message_flags(0));
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
-    typename multiple_datagram_buffers<ConstBufferSequence, endpoint_type>::item_type& 
-        buffer = buffers.at(0);
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    typename multiple_datagram_buffers<ConstBufferSequence, 
+        endpoint_type>::item_type& buffer = buffers.at(0);
     async_send_to(buffer.buffer, buffer.endpoint, [token,
       &buffer](asio::error_code ec, std::size_t bytes_transferred) mutable {
         buffer.transferred = bytes_transferred;
@@ -898,16 +945,16 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       return async_initiate<WriteToken,
         void (asio::error_code, std::size_t)>(
           initiate_async_send_multiple_datagram_buffers_to(this), token,
           buffers, flags);
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
-    typename multiple_datagram_buffers<ConstBufferSequence, endpoint_type>::item_type& 
-        buffer = buffers.at(0);
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    typename multiple_datagram_buffers<ConstBufferSequence, 
+        endpoint_type>::item_type& buffer = buffers.at(0);
     async_send_to(buffer.buffer, buffer.endpoint, [token,
       &buffer](asio::error_code ec, std::size_t bytes_transferred) mutable {
         buffer.transferred = bytes_transferred;
@@ -1064,7 +1111,7 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       asio::error_code ec;
       std::size_t s = this->impl_.get_service().receive_multiple_datagram_buffers(
@@ -1072,7 +1119,7 @@ public:
       asio::detail::throw_error(ec, "receive_multiple_datagram_buffers");
       return s;
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     typename multiple_datagram_buffers<MutableBufferSequence, endpoint_type>::item_type& 
         buffer = buffers.at(0);
     buffer.transferred = receive(buffer.buffer);
@@ -1087,7 +1134,7 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       asio::error_code ec;
       std::size_t s = this->impl_.get_service().receive_multiple_datagram_buffers(
@@ -1095,7 +1142,7 @@ public:
       asio::detail::throw_error(ec, "receive_multiple_datagram_buffers");
       return s;
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     typename multiple_datagram_buffers<MutableBufferSequence, endpoint_type>::item_type& 
         buffer = buffers.at(0);
     buffer.transferred = receive(buffer.buffer, flags);
@@ -1110,12 +1157,12 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       return this->impl_.get_service().receive(
           this->impl_.get_implementation(), buffers, flags, ec);
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     typename multiple_datagram_buffers<MutableBufferSequence, endpoint_type>::item_type& 
         buffer = buffers.at(0);
     buffer.transferred = receive(buffer.buffer, flags, ec);
@@ -1232,14 +1279,14 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       return async_initiate<ReadToken,
         void (asio::error_code, std::size_t)>(
           initiate_async_receive_multiple_datagram_buffers(this), token,
           buffers, socket_base::message_flags(0));
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     typename multiple_datagram_buffers<MutableBufferSequence, endpoint_type>::item_type& 
         buffer = buffers.at(0);
     async_receive(buffer.buffer, [token,
@@ -1268,13 +1315,13 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       return async_initiate<ReadToken,
         void (asio::error_code, std::size_t)>(
           initiate_async_receive_multiple_datagram_buffers(this), token, buffers, flags);
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     typename multiple_datagram_buffers<MutableBufferSequence, endpoint_type>::item_type& 
         buffer = buffers.at(0);
     async_receive(buffer.buffer, flags, [token,
@@ -1430,7 +1477,7 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       asio::error_code ec;
       std::size_t s = this->impl_.get_service().receive_multiple_datagram_buffers_from(
@@ -1438,7 +1485,7 @@ public:
       asio::detail::throw_error(ec, "receive_multiple_datagram_buffers_from");
       return s;
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     typename multiple_datagram_buffers<MutableBufferSequence, endpoint_type>::item_type& 
         buffer = buffers.at(0);
     buffer.transferred = receive_from(buffer.buffer, buffer.endpoint);
@@ -1453,7 +1500,7 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       asio::error_code ec;
       std::size_t s = this->impl_.get_service().receive_multiple_datagram_buffers_from(
@@ -1461,7 +1508,7 @@ public:
       asio::detail::throw_error(ec, "receive_multiple_datagram_buffers_from");
       return s;
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     typename multiple_datagram_buffers<MutableBufferSequence, endpoint_type>::item_type& 
         buffer = buffers.at(0);
     buffer.transferred = receive_from(buffer.buffer, buffer.endpoint, flags);
@@ -1476,12 +1523,12 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       return this->impl_.get_service().receive_multiple_datagram_buffers_from(
         this->impl_.get_implementation(), buffers, flags, ec);
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     typename multiple_datagram_buffers<MutableBufferSequence, endpoint_type>::item_type& 
         buffer = buffers.at(0);
     buffer.transferred = receive_from(buffer.buffer, buffer.endpoint, flags, ec);
@@ -1598,14 +1645,14 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       return async_initiate<ReadToken,
         void (asio::error_code, std::size_t)>(
           initiate_async_receive_multiple_datagram_buffers_from(this), token, buffers,
           socket_base::message_flags(0));
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     typename multiple_datagram_buffers<MutableBufferSequence, endpoint_type>::item_type& 
         buffer = buffers.at(0);
     async_receive_from(buffer.buffer, buffer.endpoint, [token,
@@ -1635,14 +1682,14 @@ public:
     if (buffers.empty()) {
       throw std::logic_error("empty buffers");
     }
-#if defined(ASIO_HAS_RECVMMSG)
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     if (buffers.size() > 1) {
       return async_initiate<ReadToken,
         void (asio::error_code, std::size_t)>(
           initiate_async_receive_multiple_datagram_buffers_from(this), token, buffers,
           flags);
     }
-#endif // defined(ASIO_HAS_RECVMMSG)
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     typename multiple_datagram_buffers<MutableBufferSequence, endpoint_type>::item_type& 
         buffer = buffers.at(0);
     async_receive_from(buffer.buffer, buffer.endpoint, flags, [token,
