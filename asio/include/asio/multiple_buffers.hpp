@@ -53,6 +53,10 @@ private:
   std::vector<item_type> m_buffers;
 
 public:
+  void clear() {
+    m_buffers.clear();
+  }
+
   std::size_t size() const {
     return m_buffers.size();
   }
