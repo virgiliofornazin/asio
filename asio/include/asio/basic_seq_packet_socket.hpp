@@ -59,9 +59,8 @@ private:
   class initiate_async_send;
   class initiate_async_receive_with_flags;
 /* multiple_datagram_buffers patch */  
-#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
   class initiate_async_send_multiple_datagram_buffers;
-#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+  class initiate_async_receive_multiple_datagram_buffers_with_flags;
 /* multiple_datagram_buffers patch */  
 
 public:
@@ -1049,6 +1048,45 @@ private:
     basic_seq_packet_socket* self_;
   };
 
+  class initiate_async_send_multiple_datagram_buffers
+  { 
+  public:
+    typedef Executor executor_type;
+
+    explicit initiate_async_send_multiple_datagram_buffers(basic_seq_packet_socket* self)
+      : self_(self)
+    {
+    }
+
+    const executor_type& get_executor() const ASIO_NOEXCEPT
+    {
+      return self_->get_executor();
+    }
+
+    template <typename WriteHandler, typename ConstBufferSequence>
+    void operator()(ASIO_MOVE_ARG(WriteHandler) handler,
+        multiple_datagram_buffers<ConstBufferSequence, endpoint_type>& buffers,
+        socket_base::message_flags flags) const
+    {
+      // If you get an error on the following line it means that your handler
+      // does not meet the documented type requirements for a WriteHandler.
+      ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
+
+      detail::non_const_lvalue<WriteHandler> handler2(handler);
+
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)      
+      self_->impl_.get_service().async_send_multiple_datagram_buffers(
+          self_->impl_.get_implementation(), buffers, flags,
+          handler2.value, self_->impl_.get_executor());
+#else // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+      throw std::logic_error("async_send_multiple_datagram_buffers not supported");
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+    }
+
+  private:
+    basic_seq_packet_socket* self_;
+  };
+
   class initiate_async_receive_with_flags
   {
   public:
@@ -1078,6 +1116,45 @@ private:
       self_->impl_.get_service().async_receive_with_flags(
           self_->impl_.get_implementation(), buffers, in_flags,
           *out_flags, handler2.value, self_->impl_.get_executor());
+    }
+
+  private:
+    basic_seq_packet_socket* self_;
+  };
+
+  class initiate_async_receive_multiple_datagram_buffers_with_flags
+  {
+  public:
+    typedef Executor executor_type;
+
+    explicit initiate_async_receive_multiple_datagram_buffers_with_flags(basic_seq_packet_socket* self)
+      : self_(self)
+    {
+    }
+
+    const executor_type& get_executor() const ASIO_NOEXCEPT
+    {
+      return self_->get_executor();
+    }
+
+    template <typename ReadHandler, typename MutableBufferSequence>
+    void operator()(ASIO_MOVE_ARG(ReadHandler) handler,
+        multiple_datagram_buffers<MutableBufferSequence, endpoint_type>& buffers,
+        socket_base::message_flags in_flags, socket_base::message_flags& out_flags) const
+    {
+      // If you get an error on the following line it means that your handler
+      // does not meet the documented type requirements for a ReadHandler.
+      ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
+
+      detail::non_const_lvalue<ReadHandler> handler2(handler);
+
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+      self_->impl_.get_service().async_receive_multiple_datagram_buffers_with_flags(
+          self_->impl_.get_implementation(), buffers, in_flags, out_flags,
+          handler2.value, self_->impl_.get_executor());
+#else // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+      throw std::logic_error("async_receive_multiple_datagram_buffers_with_flags not supported");
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
     }
 
   private:
