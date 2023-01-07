@@ -17,6 +17,7 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
+#include "asio/detail/buffer_sequence_adapter.hpp"
 #include <cstddef>
 #include <vector>
 
@@ -34,19 +35,30 @@ template <typename BufferSequence, typename EndpointType>
 struct single_datagram_buffer {
   BufferSequence buffer;
   EndpointType endpoint;
+  socket_base::message_flags flags;
   std::size_t transferred;
 
-  single_datagram_buffer() {
-    transferred = 0;
+  single_datagram_buffer() 
+    : flags(0), transferred(0) {
   }
 
   explicit single_datagram_buffer(const BufferSequence& buffer_)
-    : buffer(buffer_), transferred(0) {
+    : buffer(buffer_), flags(0), transferred(0) {
   }
 
   explicit single_datagram_buffer(const BufferSequence& buffer_,
     const EndpointType& endpoint_)
-      : buffer(buffer_), endpoint(endpoint_), transferred(0) {
+      : buffer(buffer_), endpoint(endpoint_), flags(0), transferred(0) {
+  }
+
+  explicit single_datagram_buffer(const BufferSequence& buffer_,
+    const EndpointType& endpoint_, socket_base::message_flags const& flags_)
+      : buffer(buffer_), endpoint(endpoint_), flags(flags_), transferred(0) {
+  }
+
+  bool all_empty() const {
+    return detail::buffer_sequence_adapter<BufferSequence, 
+        BufferSequence>(buffer).all_empty();
   }
 };
 
@@ -69,6 +81,18 @@ public:
 
   bool empty() const {
     return m_buffers.empty();
+  }
+
+  bool all_empty() const {
+    if (empty()) {
+      return true;
+    }
+    for (auto const& buffer: m_buffers) {
+      if (!buffer.empty()) {
+        return false;
+      }
+    }
+    return true;
   }
 
   bool full() const {

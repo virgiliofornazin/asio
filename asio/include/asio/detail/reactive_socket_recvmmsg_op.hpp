@@ -21,7 +21,7 @@
 #if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
 
 #include "asio/detail/bind_handler.hpp"
-#include "asio/detail/buffer_sequence_adapter.hpp"
+#include "asio/multiple_datagram_buffers.hpp"
 #include "asio/detail/fenced_block.hpp"
 #include "asio/detail/handler_alloc_helpers.hpp"
 #include "asio/detail/handler_invoke_helpers.hpp"
@@ -36,20 +36,19 @@
 namespace asio {
 namespace detail {
 
-template <typename MutableBufferSequence>
+template <typename MutableBufferSequence, typename EndpointType>
 class reactive_socket_recvmmsg_op_base : public reactor_op
 {
 public:
   reactive_socket_recvmmsg_op_base(const asio::error_code& success_ec,
-      socket_type socket, const MutableBufferSequence& buffers,
-      socket_base::message_flags in_flags,
-      socket_base::message_flags& out_flags, func_type complete_func)
+      socket_type socket, 
+      multiple_datagram_buffers<MutableBufferSequence, EndpointType>& buffers,
+      socket_base::message_flags in_flags, func_type complete_func)
     : reactor_op(success_ec,
         &reactive_socket_recvmmsg_op_base::do_perform, complete_func),
       socket_(socket),
       buffers_(buffers),
-      in_flags_(in_flags),
-      out_flags_(out_flags)
+      in_flags_(in_flags)
   {
   }
 
@@ -57,14 +56,16 @@ public:
   {
     reactive_socket_recvmmsg_op_base* o(
         static_cast<reactive_socket_recvmmsg_op_base*>(base));
-
+/*
     buffer_sequence_adapter<asio::mutable_buffer,
         MutableBufferSequence> bufs(o->buffers_);
 
     status result = socket_ops::non_blocking_recvmsg(o->socket_,
         bufs.buffers(), bufs.count(),
-        o->in_flags_, o->out_flags_,
+        o->in_flags_,
         o->ec_, o->bytes_transferred_) ? done : not_done;
+*/
+    status result{};
 
     ASIO_HANDLER_REACTOR_OPERATION((*o, "non_blocking_recvmsg",
           o->ec_, o->bytes_transferred_));
@@ -74,25 +75,24 @@ public:
 
 private:
   socket_type socket_;
-  MutableBufferSequence buffers_;
+  multiple_datagram_buffers<MutableBufferSequence, EndpointType> buffers_;
   socket_base::message_flags in_flags_;
-  socket_base::message_flags& out_flags_;
 };
 
-template <typename MutableBufferSequence, typename Handler, typename IoExecutor>
+template <typename MutableBufferSequence, typename EndpointType, typename Handler, typename IoExecutor>
 class reactive_socket_recvmmsg_op :
-  public reactive_socket_recvmmsg_op_base<MutableBufferSequence>
+  public reactive_socket_recvmmsg_op_base<MutableBufferSequence, EndpointType>
 {
 public:
   ASIO_DEFINE_HANDLER_PTR(reactive_socket_recvmmsg_op);
 
   reactive_socket_recvmmsg_op(const asio::error_code& success_ec,
-      socket_type socket, const MutableBufferSequence& buffers,
-      socket_base::message_flags in_flags,
-      socket_base::message_flags& out_flags, Handler& handler,
+      socket_type socket,
+      multiple_datagram_buffers<MutableBufferSequence, EndpointType>& buffers,
+      socket_base::message_flags in_flags, Handler& handler,
       const IoExecutor& io_ex)
-    : reactive_socket_recvmmsg_op_base<MutableBufferSequence>(
-        success_ec, socket, buffers, in_flags, out_flags,
+    : reactive_socket_recvmmsg_op_base<MutableBufferSequence, EndpointType>(
+        success_ec, socket, buffers, in_flags,
         &reactive_socket_recvmmsg_op::do_complete),
       handler_(ASIO_MOVE_CAST(Handler)(handler)),
       work_(handler_, io_ex)

@@ -233,7 +233,7 @@ public:
     ASIO_ERROR_LOCATION(ec);
     return ec;
   }
-  
+
 /* multiple_datagram_buffers patch */
 #if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
   template <typename ConstBufferSequence>
@@ -294,6 +294,78 @@ public:
     ASIO_ERROR_LOCATION(ec);
     return 0;
   }
+
+/* multiple_datagram_buffers patch */
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+  template <typename ConstBufferSequence, typename Handler, typename IoExecutor>
+  void async_send_multiple_datagram_buffers_to(implementation_type& impl,
+      multiple_datagram_buffers<ConstBufferSequence, endpoint_type>& buffers,
+      socket_base::message_flags flags,
+      Handler& handler, const IoExecutor& io_ex)
+  {
+    bool is_continuation =
+      asio_handler_cont_helpers::is_continuation(handler);
+
+    typename associated_cancellation_slot<Handler>::type slot
+      = asio::get_associated_cancellation_slot(handler);
+
+    // Allocate and construct an operation to wrap the handler.
+    typedef reactive_socket_sendmmsg_op<ConstBufferSequence,
+        endpoint_type, Handler, IoExecutor> op;
+    typename op::ptr p = { asio::detail::addressof(handler),
+      op::ptr::allocate(handler), 0 };
+    p.p = new (p.v) op(success_ec_, impl.socket_,
+        buffers, flags, handler, io_ex);
+
+    // Optionally register for per-operation cancellation.
+    if (slot.is_connected())
+    {
+      p.p->cancellation_key_ =
+        &slot.template emplace<reactor_op_cancellation>(
+            &reactor_, &impl.reactor_data_, impl.socket_, reactor::write_op);
+    }
+
+    ASIO_HANDLER_CREATION((reactor_.context(), *p.p, "socket",
+          &impl, impl.socket_, "async_send_multiple_datagram_buffers_to"));
+
+    start_op(impl, reactor::write_op, p.p, is_continuation, true, false);
+    p.v = p.p = 0;
+  }
+
+  // Start an asynchronous wait until data can be sent without blocking.
+  template <typename Handler, typename IoExecutor>
+  void async_send_multiple_datagram_buffers_to(implementation_type& impl, const null_buffers&,
+      socket_base::message_flags,
+      Handler& handler, const IoExecutor& io_ex)
+  {
+    bool is_continuation =
+      asio_handler_cont_helpers::is_continuation(handler);
+
+    typename associated_cancellation_slot<Handler>::type slot
+      = asio::get_associated_cancellation_slot(handler);
+
+    // Allocate and construct an operation to wrap the handler.
+    typedef reactive_null_buffers_op<Handler, IoExecutor> op;
+    typename op::ptr p = { asio::detail::addressof(handler),
+      op::ptr::allocate(handler), 0 };
+    p.p = new (p.v) op(success_ec_, handler, io_ex);
+
+    // Optionally register for per-operation cancellation.
+    if (slot.is_connected())
+    {
+      p.p->cancellation_key_ =
+        &slot.template emplace<reactor_op_cancellation>(
+            &reactor_, &impl.reactor_data_, impl.socket_, reactor::write_op);
+    }
+
+    ASIO_HANDLER_CREATION((reactor_.context(), *p.p, "socket",
+          &impl, impl.socket_, "async_send_multiple_datagram_buffers_to(null_buffers)"));
+
+    start_op(impl, reactor::write_op, p.p, is_continuation, false, false);
+    p.v = p.p = 0;
+  }
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+/* multiple_datagram_buffers patch */
 
   // Start an asynchronous send. The data being sent must be valid for the
   // lifetime of the asynchronous operation.
@@ -432,6 +504,85 @@ public:
     ASIO_ERROR_LOCATION(ec);
     return 0;
   }
+  
+/* multiple_datagram_buffers patch */
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+  template <typename MutableBufferSequence,
+      typename Handler, typename IoExecutor>
+  void async_receive_multiple_datagram_buffers_from(implementation_type& impl,
+      multiple_datagram_buffers<MutableBufferSequence, endpoint_type>& buffers,
+      socket_base::message_flags flags, Handler& handler,
+      const IoExecutor& io_ex)
+  {
+    bool is_continuation =
+      asio_handler_cont_helpers::is_continuation(handler);
+
+    typename associated_cancellation_slot<Handler>::type slot
+      = asio::get_associated_cancellation_slot(handler);
+
+    // Allocate and construct an operation to wrap the handler.
+    typedef reactive_socket_recvmmsg_op<MutableBufferSequence,
+        endpoint_type, Handler, IoExecutor> op;
+    typename op::ptr p = { asio::detail::addressof(handler),
+      op::ptr::allocate(handler), 0 };
+    p.p = new (p.v) op(success_ec_, impl.socket_,
+        buffers, flags, handler, io_ex);
+
+    // Optionally register for per-operation cancellation.
+    if (slot.is_connected())
+    {
+      p.p->cancellation_key_ =
+        &slot.template emplace<reactor_op_cancellation>(
+            &reactor_, &impl.reactor_data_, impl.socket_, reactor::read_op);
+    }
+
+    ASIO_HANDLER_CREATION((reactor_.context(), *p.p, "socket",
+          &impl, impl.socket_, "async_receive_multiple_datagram_buffers_from"));
+
+    start_op(impl,
+        (flags & socket_base::message_out_of_band)
+          ? reactor::except_op : reactor::read_op,
+        p.p, is_continuation, true, false);
+    p.v = p.p = 0;
+  }
+
+  // Wait until data can be received without blocking.
+  template <typename Handler, typename IoExecutor>
+  void async_receive_multiple_datagram_buffers_from(implementation_type& impl, const null_buffers&,
+      socket_base::message_flags flags,
+      Handler& handler, const IoExecutor& io_ex)
+  {
+    bool is_continuation =
+      asio_handler_cont_helpers::is_continuation(handler);
+
+    typename associated_cancellation_slot<Handler>::type slot
+      = asio::get_associated_cancellation_slot(handler);
+
+    // Allocate and construct an operation to wrap the handler.
+    typedef reactive_null_buffers_op<Handler, IoExecutor> op;
+    typename op::ptr p = { asio::detail::addressof(handler),
+      op::ptr::allocate(handler), 0 };
+    p.p = new (p.v) op(success_ec_, handler, io_ex);
+
+    // Optionally register for per-operation cancellation.
+    if (slot.is_connected())
+    {
+      p.p->cancellation_key_ =
+        &slot.template emplace<reactor_op_cancellation>(
+            &reactor_, &impl.reactor_data_, impl.socket_, reactor::read_op);
+    }
+
+    ASIO_HANDLER_CREATION((reactor_.context(), *p.p, "socket",
+          &impl, impl.socket_, "async_receive_multiple_datagram_buffers_from(null_buffers)"));
+
+    start_op(impl,
+        (flags & socket_base::message_out_of_band)
+          ? reactor::except_op : reactor::read_op,
+        p.p, is_continuation, false, false);
+    p.v = p.p = 0;
+  }
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+/* multiple_datagram_buffers patch */
 
   // Start an asynchronous receive. The buffer for the data being received and
   // the sender_endpoint object must both be valid for the lifetime of the

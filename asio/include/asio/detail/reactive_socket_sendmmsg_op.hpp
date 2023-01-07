@@ -12,6 +12,7 @@
 #ifndef ASIO_DETAIL_REACTIVE_SOCKET_SENDMMSG_OP_HPP
 #define ASIO_DETAIL_REACTIVE_SOCKET_SENDMMSG_OP_HPP
 
+#include "asio/buffer.hpp"
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
 # pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
@@ -21,7 +22,7 @@
 #if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
 
 #include "asio/detail/bind_handler.hpp"
-#include "asio/detail/buffer_sequence_adapter.hpp"
+#include "asio/multiple_datagram_buffers.hpp"
 #include "asio/detail/fenced_block.hpp"
 #include "asio/detail/handler_alloc_helpers.hpp"
 #include "asio/detail/handler_invoke_helpers.hpp"
@@ -35,13 +36,13 @@
 namespace asio {
 namespace detail {
 
-template <typename ConstBufferSequence>
+template <typename ConstBufferSequence, typename EndpointType>
 class reactive_socket_sendmmsg_op_base : public reactor_op
 {
 public:
   reactive_socket_sendmmsg_op_base(const asio::error_code& success_ec,
       socket_type socket, socket_ops::state_type state,
-      const ConstBufferSequence& buffers,
+      multiple_datagram_buffers<ConstBufferSequence, EndpointType>& buffers,
       socket_base::message_flags flags, func_type complete_func)
     : reactor_op(success_ec,
         &reactive_socket_sendmmsg_op_base::do_perform, complete_func),
@@ -56,7 +57,7 @@ public:
   {
     reactive_socket_sendmmsg_op_base* o(
         static_cast<reactive_socket_sendmmsg_op_base*>(base));
-
+/*
     typedef buffer_sequence_adapter<asio::const_buffer,
         ConstBufferSequence> bufs_type;
 
@@ -85,8 +86,10 @@ public:
           if (o->bytes_transferred_ < bufs.total_size())
             result = done_and_exhausted;
     }
+*/
+    status result{};
 
-    ASIO_HANDLER_REACTOR_OPERATION((*o, "non_blocking_send",
+    ASIO_HANDLER_REACTOR_OPERATION((*o, "non_blocking_sendmmsg",
           o->ec_, o->bytes_transferred_));
 
     return result;
@@ -95,22 +98,23 @@ public:
 private:
   socket_type socket_;
   socket_ops::state_type state_;
-  ConstBufferSequence buffers_;
+  multiple_datagram_buffers<ConstBufferSequence, EndpointType> buffers_;
   socket_base::message_flags flags_;
 };
 
-template <typename ConstBufferSequence, typename Handler, typename IoExecutor>
+template <typename ConstBufferSequence, typename EndpointType, typename Handler, typename IoExecutor>
 class reactive_socket_sendmmsg_op :
-  public reactive_socket_sendmmsg_op_base<ConstBufferSequence>
+  public reactive_socket_sendmmsg_op_base<ConstBufferSequence, EndpointType>
 {
 public:
   ASIO_DEFINE_HANDLER_PTR(reactive_socket_sendmmsg_op);
 
   reactive_socket_sendmmsg_op(const asio::error_code& success_ec,
       socket_type socket, socket_ops::state_type state,
-      const ConstBufferSequence& buffers, socket_base::message_flags flags,
+      multiple_datagram_buffers<ConstBufferSequence, EndpointType>& buffers,
+      socket_base::message_flags flags,
       Handler& handler, const IoExecutor& io_ex)
-    : reactive_socket_sendmmsg_op_base<ConstBufferSequence>(success_ec, socket,
+    : reactive_socket_sendmmsg_op_base<ConstBufferSequence, EndpointType>(success_ec, socket,
         state, buffers, flags, &reactive_socket_sendmmsg_op::do_complete),
       handler_(ASIO_MOVE_CAST(Handler)(handler)),
       work_(handler_, io_ex)

@@ -36,6 +36,12 @@ public:
   // The number of bytes transferred, to be passed to the completion handler.
   std::size_t bytes_transferred_;
 
+/* multiple_datagram_buffers patch */
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+  std::size_t packets_transferred_;
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+/* multiple_datagram_buffers patch */
+
   // Status returned by perform function. May be used to decide whether it is
   // worth performing more operations on the descriptor immediately.
   enum status { not_done, done, done_and_exhausted };
@@ -55,6 +61,11 @@ protected:
       ec_(success_ec),
       cancellation_key_(0),
       bytes_transferred_(0),
+/* multiple_datagram_buffers patch */
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+      packets_transferred_(0),
+#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+/* multiple_datagram_buffers patch */
       perform_func_(perform_func)
   {
   }
