@@ -1913,7 +1913,7 @@ private:
 
       detail::non_const_lvalue<WriteHandler> handler2(handler);
 
-#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)      
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
       self_->impl_.get_service().async_send_multiple_datagram_buffers(
           self_->impl_.get_implementation(), buffers, flags,
           handler2.value, self_->impl_.get_executor());
@@ -1987,7 +1987,7 @@ private:
 
       detail::non_const_lvalue<WriteHandler> handler2(handler);
 
-#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)      
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
       self_->impl_.get_service().async_send_multiple_datagram_buffers_to(
           self_->impl_.get_implementation(), buffers,
           flags, handler2.value, self_->impl_.get_executor());
@@ -2131,7 +2131,7 @@ private:
       // does not meet the documented type requirements for a ReadHandler.
       ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
 
-#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)     
+#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
       detail::non_const_lvalue<ReadHandler> handler2(handler);
       self_->impl_.get_service().async_receive_multiple_datagram_buffers_from(
           self_->impl_.get_implementation(), buffers,
