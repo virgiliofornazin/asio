@@ -44,12 +44,12 @@ class reactive_socket_recvmmsg_op_base : public reactor_op
 public:
   reactive_socket_recvmmsg_op_base(const asio::error_code& success_ec,
       socket_type socket, MultipleBufferSequence& multiple_buffer_sequence,
-      socket_base::message_flags in_flags, func_type complete_func)
+      socket_base::message_flags flags, func_type complete_func)
     : reactor_op(success_ec,
         &reactive_socket_recvmmsg_op_base::do_perform, complete_func),
       socket_(socket),
       multiple_buffer_sequence_(multiple_buffer_sequence),
-      in_flags_(in_flags)
+      flags_(flags)
   {
   }
 
@@ -58,33 +58,42 @@ public:
     reactive_socket_recvmmsg_op_base* o(
         static_cast<reactive_socket_recvmmsg_op_base*>(base));
 
-    multiple_buffer_sequence_adapter<MultipleBufferSequence> 
-      bufs(multiple_buffer_sequence_);
-      
-    return socket_ops::non_blocking_recvmmsg(impl.socket_, impl.state_, bufs, 
-        o->in_flags_, o->ec_, o->bytes_transferred_) ? done : not_done;
+    multiple_buffer_sequence_adapter<MultipleBufferSequence>
+      bufs(o->multiple_buffer_sequence_);
+
+    status result = socket_ops::non_blocking_recvmmsg(o->socket_, 
+        bufs.native_buffer(), bufs.size(), o->flags_, o->ec_, 
+        o->bytes_transferred_, o->completed_ops_)
+        ? done : not_done;
+
+    bufs.complete(result, ec);
+
+    ASIO_HANDLER_REACTOR_OPERATION((*o, "non_blocking_recvmmsg",
+          o->ec_, o->bytes_transferred_));
+
+    return result;
   }
 
 private:
   socket_type socket_;
   MultipleBufferSequence& multiple_buffer_sequence_;
-  socket_base::message_flags in_flags_;
+  socket_base::message_flags flags_;
 };
 
-template <typename MutableBufferSequence, typename EndpointType, typename Handler, typename IoExecutor>
+template <typename MultipleBufferSequence, typename Handler,
+    typename IoExecutor>
 class reactive_socket_recvmmsg_op :
-  public reactive_socket_recvmmsg_op_base<MutableBufferSequence, EndpointType>
+  public reactive_socket_recvmmsg_op_base<MultipleBufferSequence>
 {
 public:
   ASIO_DEFINE_HANDLER_PTR(reactive_socket_recvmmsg_op);
 
   reactive_socket_recvmmsg_op(const asio::error_code& success_ec,
-      socket_type socket,
-      multiple_datagram_buffers<MutableBufferSequence, EndpointType>& buffers,
-      socket_base::message_flags in_flags, Handler& handler,
+      socket_type socket, MultipleBufferSequence& multiple_buffer_sequence,
+      socket_base::message_flags flags, Handler& handler,
       const IoExecutor& io_ex)
-    : reactive_socket_recvmmsg_op_base<MutableBufferSequence, EndpointType>(
-        success_ec, socket, buffers, in_flags,
+    : reactive_socket_recvmmsg_op_base<MultipleBufferSequence>(
+        success_ec, socket, multiple_buffer_sequence, flags,
         &reactive_socket_recvmmsg_op::do_complete),
       handler_(ASIO_MOVE_CAST(Handler)(handler)),
       work_(handler_, io_ex)
@@ -115,8 +124,9 @@ public:
     // with the handler. Consequently, a local copy of the handler is required
     // to ensure that any owning sub-object remains valid until after we have
     // deallocated the memory here.
-    detail::binder2<Handler, asio::error_code, std::size_t>
-      handler(o->handler_, o->ec_, o->bytes_transferred_);
+    detail::binder4<Handler, asio::error_code, std::size_t, std::size_t, 
+        std::size_t> handler(o->handler_, o->ec_, /* TODO */ 0, /* TODO */ 0, 
+        o->bytes_transferred_);
     p.h = asio::detail::addressof(handler.handler_);
     p.reset();
 
@@ -124,7 +134,8 @@ public:
     if (owner)
     {
       fenced_block b(fenced_block::half);
-      ASIO_HANDLER_INVOCATION_BEGIN((handler.arg1_, handler.arg2_));
+      ASIO_HANDLER_INVOCATION_BEGIN((handler.arg1_, handler.arg2_, 
+          handler.arg3_, handler.arg4_));
       w.complete(handler, handler.handler_);
       ASIO_HANDLER_INVOCATION_END;
     }

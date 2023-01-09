@@ -23,13 +23,7 @@
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
 #include "asio/multiple_buffer_sequence.hpp"
-
-#if defined(__linux__)
-#if !defined(_GNU_SOURCE)
-#define _GNU_SOURCE
-#endif // !defined(_GNU_SOURCE)
-#include <sys/socket.h>
-#endif // defined(__linux__)
+#include "asio/detail/socket_types.hpp"
 
 #include "asio/detail/push_options.hpp"
 
@@ -42,7 +36,6 @@ class base_multiple_buffer_sequence_adapter
 {
 public:
 #if defined(__linux__)
-#if defined(_GNU_SOURCE)
   typedef struct mmsghdr native_multiple_buffer_type;
 
   template <typename MultipleBufferSequence>
@@ -77,7 +70,6 @@ public:
         socket_base::message_flags(source.msg_hdr.msg_flags),
         static_cast<std::size_t>(source.msg_len), ec);
   }
-#endif // defined(_GNU_SOURCE)
 #endif // defined(__linux__)
 };
 
