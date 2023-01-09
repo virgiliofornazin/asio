@@ -51,7 +51,7 @@ public:
 public:
   multiple_buffer_sequence_operation() ASIO_NOEXCEPT
     : buffer_sequence_(), buffer_sequence_adapter_(buffer_sequence_), 
-      endpoint_(), completed_(false), flags_(0), bytes_transferred_(0), 
+      endpoint_(), completed_(false), flags_(0), bytes_transferred_(0),
       error_code_()
   {
   }
@@ -61,19 +61,74 @@ public:
       ASIO_NOEXCEPT
     : buffer_sequence_(_buffer_sequence), 
       buffer_sequence_adapter_(buffer_sequence_), endpoint_(), 
-      completed_(false), flags_(0), bytes_transferred_(0)
+      completed_(false), flags_(0), bytes_transferred_(0),
+      error_code_()
   {
   }
 
   explicit multiple_buffer_sequence_operation(
       const buffer_sequence_type& _buffer_sequence,
       const endpoint_type& _endpoint) ASIO_NOEXCEPT
-    : 
     : buffer_sequence_(_buffer_sequence),  
       buffer_sequence_adapter_(buffer_sequence_), endpoint_(_endpoint), 
-      completed_(false), flags_(0), bytes_transferred_(0)
+      completed_(false), flags_(0), bytes_transferred_(0),
+      error_code_()
   {
   }
+
+  multiple_buffer_sequence_operation(
+      multiple_buffer_sequence_operation const& other)
+    : buffer_sequence_(other.buffer_sequence_),  
+      buffer_sequence_adapter_(buffer_sequence_), endpoint_(other.endpoint_), 
+      completed_(other.completed_), flags_(other.flags_), 
+      bytes_transferred_(other.bytes_transferred_),
+      error_code_(other.error_code)
+  {
+  }
+
+#if defined(ASIO_HAS_MOVE)
+  multiple_buffer_sequence_operation(
+      multiple_buffer_sequence_operation const&& other)
+    : buffer_sequence_(std::move(other.buffer_sequence_)),
+      buffer_sequence_adapter_(buffer_sequence_),
+      endpoint_(std::move(other.endpoint_)),
+      completed_(std::move(other.completed_)),
+      flags_(std::move(other.flags_)),
+      bytes_transferred_(std::move(other.bytes_transferred_)),
+      error_code_(std::move(other.error_code))
+  {
+  }
+#endif // defined(ASIO_HAS_MOVE)
+
+  multiple_buffer_sequence_operation & operator = (
+      multiple_buffer_sequence_operation const& other)
+  {
+    buffer_sequence_ = other.buffer_sequence_;
+    buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequence_);
+    endpoint_ = other.endpoint_;
+    completed_ = other.completed_;
+    flags_ = other.flags_;
+    bytes_transferred_ = other;bytes_transferred_;
+    error_code_ = other.error_code_;
+
+    return (*this);
+  }
+
+#if defined(ASIO_HAS_MOVE)
+  multiple_buffer_sequence_operation & operator = (
+      multiple_buffer_sequence_operation const&& other)
+  {
+    buffer_sequence_ = std::move(other.buffer_sequence_);
+    buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequence_);
+    endpoint_ = std::move(other.endpoint_);
+    completed_ = std::move(other.completed_);
+    flags_ = std::move(other.flags_);
+    bytes_transferred_ = std::move(other;bytes_transferred_);
+    error_code_ = std::move(other.error_code_);
+
+    return (*this);
+  }
+#endif // defined(ASIO_HAS_MOVE)
 
   native_buffer_type* buffers()
   {

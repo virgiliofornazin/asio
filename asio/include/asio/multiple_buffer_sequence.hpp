@@ -105,16 +105,52 @@ protected:
   }
   
 public:
+  base_multiple_buffer_sequence()
+  {
+  }
+
   base_multiple_buffer_sequence(const buffer_sequence_type& buffer_sequence)
   {
     push_back(buffer_sequence);
   }
 
   explicit base_multiple_buffer_sequence(
-      const buffer_sequence_type& buffer_sequence, 
+      const buffer_sequence_type& buffer_sequence,
       const endpoint_type& endpoint)
   {
     push_back(buffer_sequence, endpoint);
+  }
+
+  base_multiple_buffer_sequence(base_multiple_buffer_sequence const& other)
+    : m_container(other)
+  {
+  }
+  
+#if defined(ASIO_HAS_MOVE)
+  base_multiple_buffer_sequence(base_multiple_buffer_sequence&& other)
+    : m_container(std::move(other))
+  {
+  }
+#endif // defined(ASIO_HAS_MOVE)  
+
+  base_multiple_buffer_sequence& operator = (
+      base_multiple_buffer_sequence const& other)
+  {
+    m_container = other.m_container;
+    return (*this);
+  }
+  
+#if defined(ASIO_HAS_MOVE)
+  base_multiple_buffer_sequence& operator = (
+      base_multiple_buffer_sequence&& other)
+  {
+    m_container = std::move(other.m_container);
+    return (*this);
+  }
+#endif // defined(ASIO_HAS_MOVE) 
+  
+  virtual ~base_multiple_buffer_sequence() ASIO_NOEXCEPT
+  {
   }
 
   void reset()
