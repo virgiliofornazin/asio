@@ -43,7 +43,6 @@ class multiple_buffer_sequence_operation
 {
 public:
   typedef BufferSequence buffer_sequence_type;
-  typedef typename buffer_sequence_type::native_buffer_type native_buffer_type;
   typedef buffer_sequence_adapter<buffer_sequence_type, buffer_sequence_type>
       buffer_sequence_adapter_type;
   typedef EndpointType endpoint_type;
@@ -82,7 +81,7 @@ public:
       buffer_sequence_adapter_(buffer_sequence_), endpoint_(other.endpoint_), 
       completed_(other.completed_), flags_(other.flags_), 
       bytes_transferred_(other.bytes_transferred_),
-      error_code_(other.error_code)
+      error_code_(other.error_code_)
   {
   }
 
@@ -95,7 +94,7 @@ public:
       completed_(std::move(other.completed_)),
       flags_(std::move(other.flags_)),
       bytes_transferred_(std::move(other.bytes_transferred_)),
-      error_code_(std::move(other.error_code))
+      error_code_(std::move(other.error_code_))
   {
   }
 #endif // defined(ASIO_HAS_MOVE)
@@ -123,17 +122,12 @@ public:
     endpoint_ = std::move(other.endpoint_);
     completed_ = std::move(other.completed_);
     flags_ = std::move(other.flags_);
-    bytes_transferred_ = std::move(other;bytes_transferred_);
+    bytes_transferred_ = std::move(other.bytes_transferred_);
     error_code_ = std::move(other.error_code_);
 
     return (*this);
   }
 #endif // defined(ASIO_HAS_MOVE)
-
-  native_buffer_type* buffers()
-  {
-    return buffer_sequence_adapter_.buffers();
-  }
 
   std::size_t count() const
   {
@@ -205,12 +199,12 @@ public:
     return buffer_sequence_;
   }
 
-  buffer_sequence_adapter_type& buffer_sequence_adapter() ASIO_NOEXCEPT
+  buffer_sequence_adapter_type to_buffer_sequence_adapter() ASIO_NOEXCEPT
   {
     return buffer_sequence_adapter_;
   }
   
-  const buffer_sequence_adapter_type& buffer_sequence_adapter() const
+  const buffer_sequence_adapter_type& to_buffer_sequence_adapter() const
       ASIO_NOEXCEPT
   {
     return buffer_sequence_adapter_;

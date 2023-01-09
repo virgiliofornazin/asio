@@ -101,6 +101,53 @@ auto two_arg_move_handler_test(Handler h, Arg1* a1, Arg2* a2)
 template <typename Handler>
 char (&two_arg_move_handler_test(Handler, ...))[2];
 
+template <typename Handler, typename Arg1, typename Arg2, typename Arg3>
+auto three_arg_handler_test(Handler h, Arg1* a1, Arg2* a2, Arg3* a3)
+  -> decltype(
+    sizeof(Handler(ASIO_MOVE_CAST(Handler)(h))),
+    (ASIO_MOVE_OR_LVALUE(Handler)(h)(*a1, *a2, *a3)),
+    char(0));
+
+template <typename Handler>
+char (&three_arg_handler_test(Handler, ...))[2];
+
+template <typename Handler, typename Arg1, typename Arg2, typename Arg3>
+auto three_arg_move_handler_test(Handler h, Arg1* a1, Arg2* a2, Arg3* a3)
+  -> decltype(
+    sizeof(Handler(ASIO_MOVE_CAST(Handler)(h))),
+    (ASIO_MOVE_OR_LVALUE(Handler)(h)(
+      *a1, ASIO_MOVE_CAST(Arg2)(*a2), ASIO_MOVE_CAST(Arg3)(*a3))),
+    char(0));
+
+template <typename Handler>
+char (&three_arg_move_handler_test(Handler, ...))[2];
+
+template <typename Handler, typename Arg1, typename Arg2, typename Arg3,
+    typename Arg4>
+auto four_arg_handler_test(Handler h, Arg1* a1, Arg2* a2, Arg3* a3, 
+    Arg4* a4)
+  -> decltype(
+    sizeof(Handler(ASIO_MOVE_CAST(Handler)(h))),
+    (ASIO_MOVE_OR_LVALUE(Handler)(h)(*a1, *a2, *a3, *a4)),
+    char(0));
+
+template <typename Handler>
+char (&four_arg_handler_test(Handler, ...))[2];
+
+template <typename Handler, typename Arg1, typename Arg2, typename Arg3,
+    typename Arg4>
+auto four_arg_move_handler_test(Handler h, Arg1* a1, Arg2* a2, Arg3* a3, 
+    Arg4* a4)
+  -> decltype(
+    sizeof(Handler(ASIO_MOVE_CAST(Handler)(h))),
+    (ASIO_MOVE_OR_LVALUE(Handler)(h)(
+      *a1, ASIO_MOVE_CAST(Arg2)(*a2), ASIO_MOVE_CAST(Arg3)(*a3), 
+      ASIO_MOVE_CAST(Arg4)(*a4))),
+    char(0));
+
+template <typename Handler>
+char (&four_arg_move_handler_test(Handler, ...))[2];
+
 #  define ASIO_HANDLER_TYPE_REQUIREMENTS_ASSERT(expr, msg) \
      static_assert(expr, msg);
 
@@ -179,6 +226,37 @@ struct handler_type_requirements
             asio::detail::lvref<const std::size_t>()), \
         char(0))> ASIO_UNUSED_TYPEDEF
 
+#define ASIO_READ_MULTIPLE_HANDLER_CHECK( \
+    handler_type, handler) \
+  \
+  typedef ASIO_HANDLER_TYPE(handler_type, \
+      void(asio::error_code, std::size_t, std::size_t, std::size_t)) \
+    asio_true_handler_type; \
+  \
+  ASIO_HANDLER_TYPE_REQUIREMENTS_ASSERT( \
+      sizeof(asio::detail::four_arg_handler_test( \
+          asio::detail::rvref< \
+            asio_true_handler_type>(), \
+          static_cast<const asio::error_code*>(0), \
+          static_cast<const std::size_t*>(0), \
+          static_cast<const std::size_t*>(0), \
+          static_cast<const std::size_t*>(0))) == 1, \
+      "ReadMultipleHandler type requirements not met") \
+  \
+  typedef asio::detail::handler_type_requirements< \
+      sizeof( \
+        asio::detail::argbyv( \
+          asio::detail::rvref< \
+            asio_true_handler_type>())) + \
+      sizeof( \
+        asio::detail::rorlvref< \
+          asio_true_handler_type>()( \
+            asio::detail::lvref<const asio::error_code>(), \
+            asio::detail::lvref<const std::size_t>(), \
+            asio::detail::lvref<const std::size_t>(), \
+            asio::detail::lvref<const std::size_t>()), \
+        char(0))> ASIO_UNUSED_TYPEDEF
+
 #define ASIO_WRITE_HANDLER_CHECK( \
     handler_type, handler) \
   \
@@ -203,6 +281,37 @@ struct handler_type_requirements
         asio::detail::rorlvref< \
           asio_true_handler_type>()( \
             asio::detail::lvref<const asio::error_code>(), \
+            asio::detail::lvref<const std::size_t>()), \
+        char(0))> ASIO_UNUSED_TYPEDEF
+        
+#define ASIO_WRITE_MULTIPLE_HANDLER_CHECK( \
+    handler_type, handler) \
+  \
+  typedef ASIO_HANDLER_TYPE(handler_type, \
+      void(asio::error_code, std::size_t, std::size_t, std::size_t)) \
+    asio_true_handler_type; \
+  \
+  ASIO_HANDLER_TYPE_REQUIREMENTS_ASSERT( \
+      sizeof(asio::detail::four_arg_handler_test( \
+          asio::detail::rvref< \
+            asio_true_handler_type>(), \
+          static_cast<const asio::error_code*>(0), \
+          static_cast<const std::size_t*>(0), \
+          static_cast<const std::size_t*>(0), \
+          static_cast<const std::size_t*>(0))) == 1, \
+      "WriteMultipleHandler type requirements not met") \
+  \
+  typedef asio::detail::handler_type_requirements< \
+      sizeof( \
+        asio::detail::argbyv( \
+          asio::detail::rvref< \
+            asio_true_handler_type>())) + \
+      sizeof( \
+        asio::detail::rorlvref< \
+          asio_true_handler_type>()( \
+            asio::detail::lvref<const asio::error_code>(), \
+            asio::detail::lvref<const std::size_t>(), \
+            asio::detail::lvref<const std::size_t>(), \
             asio::detail::lvref<const std::size_t>()), \
         char(0))> ASIO_UNUSED_TYPEDEF
 

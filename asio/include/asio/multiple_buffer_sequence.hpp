@@ -71,7 +71,7 @@ protected:
       "MultipleBufferSequence buffer_sequence_type");
 
   static_assert(std::is_same<container_value_type,
-      endpoint_type>::value, "Container value_type is not the same as "
+      value_type>::value, "Container value_type is not the same as "
       "MultipleBufferSequence value_type");
 #endif // defined(ASIO_HAS_STATIC_ASSERT)
 
@@ -122,7 +122,7 @@ public:
   }
 
   base_multiple_buffer_sequence(base_multiple_buffer_sequence const& other)
-    : m_container(other)
+    : m_container(other.begin(), other.end())
   {
   }
   
@@ -406,15 +406,15 @@ protected:
   {
     if (new_size > multiple_buffer_sequence_maximum_operations_per_io)
     {
-      throw_out_of_range();
+      this->throw_out_of_range();
     }
   }
 
   void throw_if_full() const
   {
-    if (size() == multiple_buffer_sequence_maximum_operations_per_io)
+    if (this->size() == multiple_buffer_sequence_maximum_operations_per_io)
     {
-      throw_out_of_range();
+      this->throw_out_of_range();
     }
   }
 
@@ -423,25 +423,25 @@ public:
   {
     throw_if_overflow(count);
 
-    m_container.reserve(count);
+    this->m_container.reserve(count);
   }
 
   size_type capacity() const ASIO_NOEXCEPT
   {
-    return m_container.capacity() > 
+    return this->m_container.capacity() > 
         multiple_buffer_sequence_maximum_operations_per_io ? 
         multiple_buffer_sequence_maximum_operations_per_io : 
-        m_container.capacity();
+        this->m_container.capacity();
   }
 
   void shrink_to_fit() const
   {
-    return m_container.shrink_to_fit();
+    return this->m_container.shrink_to_fit();
   }
 
   void clear()
   {
-    m_container.clear();
+    this->m_container.clear();
   }
 
 #if defined(ASIO_HAS_VARIADIC_TEMPLATES)
@@ -450,7 +450,7 @@ public:
   {
     throw_if_full();
     
-    m_container.emplace(pos, value_type(std::forward<Args>(args)...));
+    this->m_container.emplace(pos, value_type(std::forward<Args>(args)...));
   }
 
   template <typename... Args>
@@ -458,14 +458,14 @@ public:
   {
     throw_if_full();
     
-    m_container.emplace_back(value_type(std::forward<Args>(args)...));
+    this->m_container.emplace_back(value_type(std::forward<Args>(args)...));
   }
 #else // defined(ASIO_HAS_VARIADIC_TEMPLATES)
   void insert(const_iterator pos, const buffer_sequence_type& buffer_sequence)
   {
     throw_if_full();
     
-    m_container.insert(pos, value_type(buffer_sequence);
+    this->m_container.insert(pos, value_type(buffer_sequence);
   }
 
   void insert(const_iterator pos, const buffer_sequence_type& buffer_sequence,
@@ -473,7 +473,7 @@ public:
   {
     throw_if_full();
     
-    m_container.insert(pos, value_type(buffer_sequence, endpoint));
+    this->m_container.insert(pos, value_type(buffer_sequence, endpoint));
   }
 
   void insert(const_iterator pos, const buffer_sequence_type& buffer_sequence,
@@ -481,7 +481,7 @@ public:
   {
     throw_if_full();
     
-    m_container.insert(pos, value_type(buffer_sequence, endpoint, flags));
+    this->m_container.insert(pos, value_type(buffer_sequence, endpoint, flags));
   }
 
   void push_back(const_iterator pos,
@@ -489,7 +489,7 @@ public:
   {
     throw_if_full();
     
-    m_container.push_back(pos, value_type(buffer_sequence);
+    this->m_container.push_back(pos, value_type(buffer_sequence);
   }
 
   void push_back(const_iterator pos,
@@ -498,7 +498,7 @@ public:
   {
     throw_if_full();
     
-    m_container.push_back(pos, value_type(buffer_sequence, endpoint));
+    this->m_container.push_back(pos, value_type(buffer_sequence, endpoint));
   }
 
   void push_back(const_iterator pos, 
@@ -507,50 +507,42 @@ public:
   {
     throw_if_full();
 
-    m_container.push_back(pos, value_type(buffer_sequence, endpoint, flags));
+    this->m_container.push_back(pos, value_type(buffer_sequence, endpoint, flags));
   }
 #endif // defined(ASIO_HAS_VARIADIC_TEMPLATES)
 
   void erase(iterator pos)
   {
-    return m_container.erase(pos);
+    return this->m_container.erase(pos);
   }
 
   void erase(const_iterator pos)
   {
-    return m_container.erase(pos);
+    return this->m_container.erase(pos);
   }
 
   void erase(iterator first, iterator last)
   {
-    return m_container.erase(first, last);
+    return this->m_container.erase(first, last);
   }
 
   void erase(const_iterator first, const_iterator last)
   {
-    return m_container.erase(first, last);
+    return this->m_container.erase(first, last);
   }
 
   void pop_back()
   {
-    m_container.pop_back();
+    this->m_container.pop_back();
   }
 
   void resize(size_type count)
   {
     throw_if_overflow(count);
 
-    size_type const previous_size = size();
+    size_type const previous_size = this->size();
 
-    m_container.resize(count);
-
-    if (count > previous_size)
-    {
-      for (size_type i = previous_size; i < count; ++i)
-      {
-        m_container[i] = allocate_op();
-      }
-    }
+    this->m_container.resize(count);
   }
 };
 
