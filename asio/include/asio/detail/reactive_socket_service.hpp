@@ -269,9 +269,8 @@ public:
       MultipleBufferSequence& multiple_buffer_sequence, 
       socket_base::message_flags flags, asio::error_code& ec)
   {
-    return socket_ops::sync_sendmmsg(impl.socket_, impl.state_,
-        multiple_buffer_sequence, flags, multiple_buffer_sequence.all_empty(), 
-        ec);
+    return send_multiple_buffer_sequence(impl, multiple_buffer_sequence,
+        flags, ec);
   }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
@@ -355,7 +354,7 @@ public:
       = asio::get_associated_cancellation_slot(handler);
 
     // Allocate and construct an operation to wrap the handler.
-    typedef reactive_socket_sendto_op<MultipleBufferSequence,
+    typedef reactive_socket_sendmmsg_op<MultipleBufferSequence,
         endpoint_type, Handler, IoExecutor> op;
     typename op::ptr p = { asio::detail::addressof(handler),
       op::ptr::allocate(handler), 0 };
@@ -487,9 +486,8 @@ public:
       MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags, asio::error_code& ec)
   {
-    return socket_ops::sync_recvmmsg(impl.socket_, impl.state_,
-        multiple_buffer_sequence, flags, multiple_buffer_sequence.all_empty(), 
-        ec);
+    return receive_multiple_buffer_sequence(impl, multiple_buffer_sequence,
+        flags, ec);
   }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
@@ -584,8 +582,8 @@ public:
       = asio::get_associated_cancellation_slot(handler);
 
     // Allocate and construct an operation to wrap the handler.
-    typedef reactive_socket_recvfrom_op<MultipleBufferSequence,
-        endpoint_type, Handler, IoExecutor> op;
+    typedef reactive_socket_recvmmsg_op<MultipleBufferSequence,
+        Handler, IoExecutor> op;
     typename op::ptr p = { asio::detail::addressof(handler),
       op::ptr::allocate(handler), 0 };
     int protocol = impl.protocol_.type();

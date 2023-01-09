@@ -20,10 +20,10 @@
 
 #include "asio/detail/config.hpp"
 
-#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
 #include "asio/detail/bind_handler.hpp"
-#include "asio/multiple_datagram_buffers.hpp"
+#include "asio/detail/multiple_buffer_sequence_adapter.hpp"
 #include "asio/detail/fenced_block.hpp"
 #include "asio/detail/handler_alloc_helpers.hpp"
 #include "asio/detail/handler_invoke_helpers.hpp"
@@ -38,18 +38,17 @@
 namespace asio {
 namespace detail {
 
-template <typename MutableBufferSequence, typename EndpointType>
+template <typename MultipleBufferSequence>
 class reactive_socket_recvmmsg_op_base : public reactor_op
 {
 public:
   reactive_socket_recvmmsg_op_base(const asio::error_code& success_ec,
-      socket_type socket, 
-      multiple_datagram_buffers<MutableBufferSequence, EndpointType>& buffers,
+      socket_type socket, MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags in_flags, func_type complete_func)
     : reactor_op(success_ec,
         &reactive_socket_recvmmsg_op_base::do_perform, complete_func),
       socket_(socket),
-      buffers_(buffers),
+      multiple_buffer_sequence_(multiple_buffer_sequence),
       in_flags_(in_flags)
   {
   }
@@ -58,26 +57,17 @@ public:
   {
     reactive_socket_recvmmsg_op_base* o(
         static_cast<reactive_socket_recvmmsg_op_base*>(base));
-/*
-    buffer_sequence_adapter<asio::mutable_buffer,
-        MutableBufferSequence> bufs(o->buffers_);
 
-    status result = socket_ops::non_blocking_recvmsg(o->socket_,
-        bufs.buffers(), bufs.count(),
-        o->in_flags_,
-        o->ec_, o->bytes_transferred_) ? done : not_done;
-*/
-    status result{};
-
-    ASIO_HANDLER_REACTOR_OPERATION((*o, "non_blocking_recvmsg",
-          o->ec_, o->bytes_transferred_));
-
-    return result;
+    multiple_buffer_sequence_adapter<MultipleBufferSequence> 
+      bufs(multiple_buffer_sequence_);
+      
+    return socket_ops::non_blocking_recvmmsg(impl.socket_, impl.state_, bufs, 
+        o->in_flags_, o->ec_, o->bytes_transferred_) ? done : not_done;
   }
 
 private:
   socket_type socket_;
-  multiple_datagram_buffers<MutableBufferSequence, EndpointType> buffers_;
+  MultipleBufferSequence& multiple_buffer_sequence_;
   socket_base::message_flags in_flags_;
 };
 
@@ -150,6 +140,6 @@ private:
 
 #include "asio/detail/pop_options.hpp"
 
-#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
 #endif // ASIO_DETAIL_REACTIVE_SOCKET_RECVMMSG_OP_HPP

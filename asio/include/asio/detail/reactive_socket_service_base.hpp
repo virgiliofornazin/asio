@@ -27,8 +27,8 @@
 #include "asio/error.hpp"
 #include "asio/execution_context.hpp"
 #include "asio/socket_base.hpp"
-#include "asio/multiple_buffer_sequence.hpp"
 #include "asio/detail/buffer_sequence_adapter.hpp"
+#include "asio/detail/multiple_buffer_sequence_adapter.hpp"
 #include "asio/detail/memory.hpp"
 #include "asio/detail/reactive_null_buffers_op.hpp"
 #include "asio/detail/reactive_socket_recv_op.hpp"
@@ -278,9 +278,16 @@ public:
       MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags, asio::error_code& ec)
   {
-    return socket_ops::sync_sendmmsg(impl.socket_, impl.state_,
-        multiple_buffer_sequence, flags, multiple_buffer_sequence.all_empty(), 
-        ec);
+    multiple_buffer_sequence_adapter<MultipleBufferSequence> 
+      bufs(multiple_buffer_sequence);
+
+    size_t result = socket_ops::sync_sendmmsg(impl.socket_, impl.state_,
+        bufs.native_buffer(), bufs.size(), flags,
+        multiple_buffer_sequence.all_empty(), ec);
+
+    bufs.complete(result, ec);
+
+    return result;
   }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
@@ -503,9 +510,8 @@ public:
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
   // Wait until data can be received without blocking.
   size_t receive_multiple_buffer_sequence(base_implementation_type& impl,
-      const null_buffers&, socket_base::message_flags, asio::error_code& ec)
+      const null_buffers& nb, socket_base::message_flags, asio::error_code& ec)
   {
-    null_buffers nb;
     return receive_multiple_buffer_sequence_with_flags(impl, nb, 0, ec);
   }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
@@ -609,11 +615,10 @@ public:
   // Wait until data can be received without blocking.
   template <typename Handler, typename IoExecutor>
   void async_receive_multiple_buffer_sequence(base_implementation_type& impl,
-      const null_buffers&, socket_base::message_flags flags,
+      const null_buffers& nb, socket_base::message_flags flags,
       Handler& handler, const IoExecutor& io_ex)
   {
-    null_buffers nb;
-    return async_receive_multiple_buffer_sequence_with_flags(impl, nb; 0,
+    return async_receive_multiple_buffer_sequence_with_flags(impl, nb, 0,
         handler, ec);
   }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
@@ -640,11 +645,18 @@ public:
   size_t receive_multiple_buffer_sequence_with_flags(
       base_implementation_type& impl,
       MultipleBufferSequence& multiple_buffer_sequence,
-      socket_base::message_flags in_flags, asio::error_code& ec)
+      socket_base::message_flags flags, asio::error_code& ec)
   {
-    return socket_ops::sync_recvmmsg(impl.socket_, impl.state_,
-        multiple_buffer_sequence, in_flags, 
+    multiple_buffer_sequence_adapter<MultipleBufferSequence> 
+      bufs(multiple_buffer_sequence);
+
+    size_t result = socket_ops::sync_recvmmsg(impl.socket_, impl.state_,
+        bufs.native_buffer(), bufs.size(), flags, 
         multiple_buffer_sequence.all_empty(), ec);
+
+    bufs.complete(result, ec);
+
+    return result;
   }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 

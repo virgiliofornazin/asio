@@ -31,6 +31,8 @@
 #include "asio/detail/io_uring_service.hpp"
 #include "asio/detail/io_uring_socket_recv_op.hpp"
 #include "asio/detail/io_uring_socket_recvmsg_op.hpp"
+#include "asio/detail/io_uring_socket_sendmmsg_op.hpp"
+#include "asio/detail/io_uring_socket_recvmmsg_op.hpp"
 #include "asio/detail/io_uring_socket_send_op.hpp"
 #include "asio/detail/io_uring_wait_op.hpp"
 #include "asio/detail/socket_holder.hpp"

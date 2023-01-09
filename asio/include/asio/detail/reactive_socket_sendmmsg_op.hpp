@@ -21,10 +21,10 @@
 
 #include "asio/detail/config.hpp"
 
-#if defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
 #include "asio/detail/bind_handler.hpp"
-#include "asio/multiple_datagram_buffers.hpp"
+#include "asio/detail/multiple_buffer_sequence_adapter.hpp"
 #include "asio/detail/fenced_block.hpp"
 #include "asio/detail/handler_alloc_helpers.hpp"
 #include "asio/detail/handler_invoke_helpers.hpp"
@@ -171,6 +171,6 @@ private:
 
 #include "asio/detail/pop_options.hpp"
 
-#endif // defined(ASIO_HAS_MULTIPLE_DATAGRAM_BUFFER_IO)
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
 #endif // ASIO_DETAIL_REACTIVE_SOCKET_SENDMMSG_OP_HPP

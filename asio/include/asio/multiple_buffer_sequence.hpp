@@ -19,7 +19,7 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
-#include "asio/detail/multiple_buffer_sequence_operation.hpp"
+#include "asio/detail/multiple_buffer_sequence_op.hpp"
 #include "asio/socket_base.hpp"
 #include <stdexcept>
 #include <memory>
@@ -49,7 +49,7 @@ public:
   typedef EndpointType endpoint_type;
   typedef ContainerType container_type;
 
-  typedef detail::multiple_buffer_sequence_operation<buffer_sequence_type, 
+  typedef detail::multiple_buffer_sequence_op<buffer_sequence_type, 
       endpoint_type> value_type;
 
 protected:
@@ -121,6 +121,7 @@ public:
     push_back(buffer_sequence, endpoint);
   }
 
+private:
   base_multiple_buffer_sequence(base_multiple_buffer_sequence const& other)
     : m_container(other.begin(), other.end())
   {
@@ -148,7 +149,8 @@ public:
     return (*this);
   }
 #endif // defined(ASIO_HAS_MOVE) 
-  
+ public:
+
   virtual ~base_multiple_buffer_sequence() ASIO_NOEXCEPT
   {
   }
@@ -336,7 +338,7 @@ template <typename BufferSequence, typename EndpointType,
     std::size_t BufferSequenceCount>
 class fixed_size_multiple_buffer_sequence
   : public base_multiple_buffer_sequence<BufferSequence, EndpointType,
-  std::array<detail::multiple_buffer_sequence_operation<BufferSequence, EndpointType>, 
+  std::array<detail::multiple_buffer_sequence_op<BufferSequence, EndpointType>, 
     BufferSequenceCount>>
 {
 public:
@@ -344,7 +346,7 @@ public:
       BufferSequenceCount> this_type;
 
   typedef base_multiple_buffer_sequence<BufferSequence, EndpointType,
-      std::array<detail::multiple_buffer_sequence_operation<BufferSequence,
+      std::array<detail::multiple_buffer_sequence_op<BufferSequence,
       EndpointType>, BufferSequenceCount>> base_type;
 
   typedef typename base_type::buffer_sequence_type buffer_sequence_type;
@@ -373,10 +375,10 @@ static inline fixed_size_multiple_buffer_sequence<BufferSequence, EndpointType,
 
 template <typename BufferSequence, typename EndpointType,
     typename BufferSequenceContainerAllocatorType = std::allocator<
-    detail::multiple_buffer_sequence_operation<BufferSequence, EndpointType>>>
+    detail::multiple_buffer_sequence_op<BufferSequence, EndpointType>>>
 class resizeable_multiple_buffer_sequence
   : public base_multiple_buffer_sequence<BufferSequence, EndpointType,
-  std::vector<detail::multiple_buffer_sequence_operation<BufferSequence, 
+  std::vector<detail::multiple_buffer_sequence_op<BufferSequence, 
     EndpointType>, BufferSequenceContainerAllocatorType>>
 {
 public:
@@ -384,7 +386,7 @@ public:
       BufferSequenceContainerAllocatorType> this_type;
 
   typedef base_multiple_buffer_sequence<BufferSequence, EndpointType,
-      std::vector<detail::multiple_buffer_sequence_operation<BufferSequence, 
+      std::vector<detail::multiple_buffer_sequence_op<BufferSequence, 
       EndpointType>, BufferSequenceContainerAllocatorType>> base_type;
 
   typedef typename base_type::buffer_sequence_type buffer_sequence_type;

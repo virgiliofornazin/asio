@@ -426,13 +426,13 @@ public:
     while (iterator != end)
     {
       typename MultipleBufferSequence::value_type&
-          multiple_buffer_sequence_operation = *iterator;
+          multiple_buffer_sequence_op = *iterator;
       const typename MultipleBufferSequence::buffer_sequence_type&
-          buffer_sequence = multiple_buffer_sequence_operation.
+          buffer_sequence = multiple_buffer_sequence_op.
           buffer_sequence();
       asio::error_code ec;
       std::size_t bytes_transferred = send(buffer_sequence, flags, ec);
-      multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+      multiple_buffer_sequence_op.do_complete(bytes_transferred, 
           ec);
       asio::detail::throw_error(ec, "send_multiple_buffer_sequence");
       if (bytes_transferred == 0)
@@ -513,12 +513,12 @@ public:
     while (iterator != end)
     {
       typename MultipleBufferSequence::value_type&
-          multiple_buffer_sequence_operation = *iterator;
+          multiple_buffer_sequence_op = *iterator;
       const typename MultipleBufferSequence::buffer_sequence_type&
-          buffer_sequence = multiple_buffer_sequence_operation.
+          buffer_sequence = multiple_buffer_sequence_op.
           buffer_sequence();
       std::size_t bytes_transferred = send(buffer_sequence, flags, ec);
-      multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+      multiple_buffer_sequence_op.do_complete(bytes_transferred, 
           ec);
       if (bytes_transferred == 0)
       {
@@ -681,23 +681,23 @@ public:
         multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::iterator end =
         multiple_buffer_sequence.end();
-    std::size_t multiple_buffer_sequence_operation_index = 0;
-    std::size_t multiple_buffer_sequence_operation_count = 
+    std::size_t multiple_buffer_sequence_op_index = 0;
+    std::size_t multiple_buffer_sequence_op_count = 
         multiple_buffer_sequence.size();
     while (iterator != end)
     {
       typename MultipleBufferSequence::value_type&
-          multiple_buffer_sequence_operation = *iterator;
+          multiple_buffer_sequence_op = *iterator;
       const typename MultipleBufferSequence::buffer_sequence_type&
-          buffer_sequence = multiple_buffer_sequence_operation.
+          buffer_sequence = multiple_buffer_sequence_op.
           buffer_sequence();
       auto composed_token = [moved_token = std::move(token),
-          &multiple_buffer_sequence_operation, 
-          index = multiple_buffer_sequence_operation_index,
-          count = multiple_buffer_sequence_operation_count](asio::error_code ec, 
+          &multiple_buffer_sequence_op, 
+          index = multiple_buffer_sequence_op_index,
+          count = multiple_buffer_sequence_op_count](asio::error_code ec, 
             std::size_t bytes_transferred) mutable
       {
-        multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+        multiple_buffer_sequence_op.do_complete(bytes_transferred, 
             ec);
         moved_token(ec, index, count, bytes_transferred);
       };
@@ -797,13 +797,13 @@ public:
     // Try to receive only the first buffer in case of missing system call for
     // receive_multiple_buffer_sequence...
     typename MultipleBufferSequence::value_type&
-        multiple_buffer_sequence_operation = multiple_buffer_sequence.front();
+        multiple_buffer_sequence_op = multiple_buffer_sequence.front();
     const typename MultipleBufferSequence::buffer_sequence_type&
-        buffer_sequence = multiple_buffer_sequence_operation.
+        buffer_sequence = multiple_buffer_sequence_op.
         buffer_sequence();
     asio::error_code ec;
     std::size_t bytes_transferred = receive(buffer_sequence, 0, out_flags, ec);
-    multiple_buffer_sequence_operation.complete_operation(out_flags,
+    multiple_buffer_sequence_op.do_complete(out_flags,
         bytes_transferred, ec);
     asio::detail::throw_error(ec, "receive_multiple_buffer_sequence");
     if (bytes_transferred == 0)
@@ -917,14 +917,14 @@ public:
     // Try to receive only the first buffer in case of missing system call for
     // receive_multiple_buffer_sequence...
     typename MultipleBufferSequence::value_type&
-        multiple_buffer_sequence_operation = multiple_buffer_sequence.front();
+        multiple_buffer_sequence_op = multiple_buffer_sequence.front();
     const typename MultipleBufferSequence::buffer_sequence_type&
-        buffer_sequence = multiple_buffer_sequence_operation.
+        buffer_sequence = multiple_buffer_sequence_op.
         buffer_sequence();
     asio::error_code ec;
     std::size_t bytes_transferred = receive(buffer_sequence, in_flags, 
         out_flags, ec);
-    multiple_buffer_sequence_operation.complete_operation(out_flags,
+    multiple_buffer_sequence_op.do_complete(out_flags,
         bytes_transferred, ec);
     asio::detail::throw_error(ec, "receive_multiple_buffer_sequence");
     if (bytes_transferred == 0)
@@ -1009,13 +1009,13 @@ public:
     // Try to receive only the first buffer in case of missing system call for
     // receive_multiple_buffer_sequence...
     typename MultipleBufferSequence::value_type&
-        multiple_buffer_sequence_operation = multiple_buffer_sequence.front();
+        multiple_buffer_sequence_op = multiple_buffer_sequence.front();
     const typename MultipleBufferSequence::buffer_sequence_type&
-        buffer_sequence = multiple_buffer_sequence_operation.
+        buffer_sequence = multiple_buffer_sequence_op.
         buffer_sequence();
     std::size_t bytes_transferred = receive(buffer_sequence, in_flags, 
         out_flags, ec);
-    multiple_buffer_sequence_operation.complete_operation(out_flags,
+    multiple_buffer_sequence_op.do_complete(out_flags,
         bytes_transferred, ec);
     if (bytes_transferred == 0)
     {

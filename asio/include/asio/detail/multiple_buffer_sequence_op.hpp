@@ -1,5 +1,5 @@
 //
-// multiple_buffer_sequence_operation.hpp
+// multiple_buffer_sequence_op.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
 // ( TODO: update header with copyright of asio C++ library )
@@ -11,8 +11,8 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#ifndef ASIO_MULTIPLE_BUFFER_SEQUENCE_OPERATION_HPP
-#define ASIO_MULTIPLE_BUFFER_SEQUENCE_OPERATION_HPP
+#ifndef ASIO_MULTIPLE_BUFFER_SEQUENCE_OP_HPP
+#define ASIO_MULTIPLE_BUFFER_SEQUENCE_OP_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
 # pragma once
@@ -39,7 +39,7 @@ namespace detail {
  * call in supported operating systems (Linux only at this time) 
  */
 template <typename BufferSequence, typename EndpointType>
-class multiple_buffer_sequence_operation
+class multiple_buffer_sequence_op
 {
 public:
   typedef BufferSequence buffer_sequence_type;
@@ -48,14 +48,14 @@ public:
   typedef EndpointType endpoint_type;
 
 public:
-  multiple_buffer_sequence_operation() ASIO_NOEXCEPT
+  multiple_buffer_sequence_op() ASIO_NOEXCEPT
     : buffer_sequence_(), buffer_sequence_adapter_(buffer_sequence_), 
       endpoint_(), completed_(false), flags_(0), bytes_transferred_(0),
       error_code_()
   {
   }
 
-  explicit multiple_buffer_sequence_operation(
+  explicit multiple_buffer_sequence_op(
       const buffer_sequence_type& _buffer_sequence)
       ASIO_NOEXCEPT
     : buffer_sequence_(_buffer_sequence), 
@@ -65,7 +65,7 @@ public:
   {
   }
 
-  explicit multiple_buffer_sequence_operation(
+  explicit multiple_buffer_sequence_op(
       const buffer_sequence_type& _buffer_sequence,
       const endpoint_type& _endpoint) ASIO_NOEXCEPT
     : buffer_sequence_(_buffer_sequence),  
@@ -75,8 +75,9 @@ public:
   {
   }
 
-  multiple_buffer_sequence_operation(
-      multiple_buffer_sequence_operation const& other)
+private:
+  multiple_buffer_sequence_op(
+      multiple_buffer_sequence_op const& other)
     : buffer_sequence_(other.buffer_sequence_),  
       buffer_sequence_adapter_(buffer_sequence_), endpoint_(other.endpoint_), 
       completed_(other.completed_), flags_(other.flags_), 
@@ -86,8 +87,8 @@ public:
   }
 
 #if defined(ASIO_HAS_MOVE)
-  multiple_buffer_sequence_operation(
-      multiple_buffer_sequence_operation const&& other)
+  multiple_buffer_sequence_op(
+      multiple_buffer_sequence_op const&& other)
     : buffer_sequence_(std::move(other.buffer_sequence_)),
       buffer_sequence_adapter_(buffer_sequence_),
       endpoint_(std::move(other.endpoint_)),
@@ -99,8 +100,8 @@ public:
   }
 #endif // defined(ASIO_HAS_MOVE)
 
-  multiple_buffer_sequence_operation & operator = (
-      multiple_buffer_sequence_operation const& other)
+  multiple_buffer_sequence_op & operator = (
+      multiple_buffer_sequence_op const& other)
   {
     buffer_sequence_ = other.buffer_sequence_;
     buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequence_);
@@ -114,8 +115,8 @@ public:
   }
 
 #if defined(ASIO_HAS_MOVE)
-  multiple_buffer_sequence_operation & operator = (
-      multiple_buffer_sequence_operation const&& other)
+  multiple_buffer_sequence_op & operator = (
+      multiple_buffer_sequence_op const&& other)
   {
     buffer_sequence_ = std::move(other.buffer_sequence_);
     buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequence_);
@@ -128,6 +129,7 @@ public:
     return (*this);
   }
 #endif // defined(ASIO_HAS_MOVE)
+public:
 
   std::size_t count() const
   {
@@ -252,7 +254,7 @@ public:
     return error_code_;
   }
 
-  void complete_operation(socket_base::message_flags _flags,
+  void do_complete(socket_base::message_flags _flags,
       std::size_t _bytes_transferred, const asio::error_code& _error_code)
   {
     completed_ = true;
@@ -261,7 +263,7 @@ public:
     error_code_ = _error_code;
   }
 
-  void complete_operation(std::size_t _bytes_transferred,
+  void do_complete(std::size_t _bytes_transferred,
       const asio::error_code& _error_code)
   {
     completed_ = true;
@@ -284,4 +286,4 @@ private:
 
 #include "asio/detail/pop_options.hpp"
 
-#endif // ASIO_MULTIPLE_BUFFER_SEQUENCE_OPERATION_HPP
+#endif // ASIO_MULTIPLE_BUFFER_SEQUENCE_OP_HPP
