@@ -50,23 +50,27 @@ public:
 
 public:
   multiple_buffer_sequence_operation() ASIO_NOEXCEPT
-    : buffer_sequence_adapter_(), endpoint_(), completed_(false), flags_(0), 
-      bytes_transferred_(0), error_code_()
+    : buffer_sequence_(), buffer_sequence_adapter_(buffer_sequence_), 
+      endpoint_(), completed_(false), flags_(0), bytes_transferred_(0), 
+      error_code_()
   {
   }
 
   explicit multiple_buffer_sequence_operation(
-      const buffer_sequence_type& buffer_sequence)
+      const buffer_sequence_type& _buffer_sequence)
       ASIO_NOEXCEPT
-    : buffer_sequence_adapter_(buffer_sequence), endpoint_(), completed_(false),
-      flags_(0), bytes_transferred_(0)
+    : buffer_sequence_(_buffer_sequence), 
+      buffer_sequence_adapter_(buffer_sequence_), endpoint_(), 
+      completed_(false), flags_(0), bytes_transferred_(0)
   {
   }
 
   explicit multiple_buffer_sequence_operation(
-      const buffer_sequence_type& buffer_sequence,
+      const buffer_sequence_type& _buffer_sequence,
       const endpoint_type& _endpoint) ASIO_NOEXCEPT
-    : buffer_sequence_adapter_(buffer_sequence), endpoint_(_endpoint), 
+    : 
+    : buffer_sequence_(_buffer_sequence),  
+      buffer_sequence_adapter_(buffer_sequence_), endpoint_(_endpoint), 
       completed_(false), flags_(0), bytes_transferred_(0)
   {
   }
@@ -98,7 +102,8 @@ public:
   
   void reset() ASIO_NOEXCEPT
   {
-    buffer_sequence_adapter_ = buffer_sequence_adapter_type();
+    buffer_sequence_ = buffer_sequence_type();
+    buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequence_);
     endpoint_ = endpoint_type();
     completed_ = false;
     flags_ = 0;
@@ -106,9 +111,10 @@ public:
     error_code_ = asio::error_code();
   }
 
-  void reset(const buffer_sequence_type& buffer_sequence) ASIO_NOEXCEPT
+  void reset(const buffer_sequence_type& _buffer_sequence) ASIO_NOEXCEPT
   {
-    buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequnce);
+    buffer_sequence_ = _buffer_sequence;
+    buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequence_);
     endpoint_ = endpoint_type();
     completed_ = false;
     flags_ = 0;
@@ -116,10 +122,11 @@ public:
     error_code_ = asio::error_code();
   }
 
-  void reset(const buffer_sequence_type& buffer_sequence,
+  void reset(const buffer_sequence_type& _buffer_sequence,
       const endpoint_type& _endpoint) ASIO_NOEXCEPT
   {
-    buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequnce);
+    buffer_sequence_ = _buffer_sequence;
+    buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequence_);
     endpoint_ = _endpoint;
     completed_ = false;
     flags_ = 0;
@@ -130,6 +137,17 @@ public:
   bool empty() const
   {
     return all_empty();
+  }
+
+  buffer_sequence_type& buffer_sequence() ASIO_NOEXCEPT
+  {
+    return buffer_sequence_;
+  }
+  
+  const buffer_sequence_type& buffer_sequence() const
+      ASIO_NOEXCEPT
+  {
+    return buffer_sequence_;
   }
 
   buffer_sequence_adapter_type& buffer_sequence_adapter() ASIO_NOEXCEPT
@@ -143,10 +161,11 @@ public:
     return buffer_sequence_adapter_;
   }
 
-  void set_buffer_sequence(const buffer_sequence_type& buffer_sequence)
+  void set_buffer_sequence(const buffer_sequence_type& _buffer_sequence)
       ASIO_NOEXCEPT
   {
-    buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequence);
+    buffer_sequence_ = _buffer_sequence;
+    buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequence_);
   }
   
   endpoint_type& endpoint() ASIO_NOEXCEPT
@@ -202,6 +221,7 @@ public:
   }
 
 private:
+  buffer_sequence_type buffer_sequence_;
   buffer_sequence_adapter_type buffer_sequence_adapter_;
   endpoint_type endpoint_;
   bool completed_;
