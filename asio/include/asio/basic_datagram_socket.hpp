@@ -2761,12 +2761,18 @@ private:
       // If you get an error on the following line it means that your handler
       // does not meet the documented type requirements for a 
       // WriteMultipleHandler.
-      ASIO_WRITE_HANDLER_CHECK(WriteMultipleHandler, handler) type_check;
+      ASIO_WRITE_MULTIPLE_HANDLER_CHECK(WriteMultipleHandler, handler)
+          type_check;
 
       detail::non_const_lvalue<WriteMultipleHandler> handler2(handler);
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
       self_->impl_.get_service().async_send_multiple_buffer_sequence(
           self_->impl_.get_implementation(), multiple_buffer_sequence, flags,
           handler2.value, self_->impl_.get_executor());
+#else // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+      throw std::runtime_error("io service does not implemented method "
+          "async_send_multiple_buffer_sequence");
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     }
 
   private:
@@ -2831,12 +2837,18 @@ private:
       // If you get an error on the following line it means that your handler
       // does not meet the documented type requirements for a 
       // WriteMultipleHandler.
-      ASIO_WRITE_HANDLER_CHECK(WriteMultipleHandler, handler) type_check;
+      ASIO_WRITE_MULTIPLE_HANDLER_CHECK(WriteMultipleHandler, handler) 
+          type_check;
 
       detail::non_const_lvalue<WriteMultipleHandler> handler2(handler);
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
       self_->impl_.get_service().async_send_multiple_buffer_sequence_to(
           self_->impl_.get_implementation(), multiple_buffer_sequence,
           flags, handler2.value, self_->impl_.get_executor());
+#else // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+      throw std::runtime_error("io service does not implemented method "
+          "async_send_multiple_buffer_sequence_to");
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     }
 
   private:
@@ -2904,9 +2916,14 @@ private:
       ASIO_READ_MULTIPLE_HANDLER_CHECK(ReadMultipleHandler, handler) type_check;
 
       detail::non_const_lvalue<ReadMultipleHandler> handler2(handler);
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
       self_->impl_.get_service().async_receive_multiple_buffer_sequence(
           self_->impl_.get_implementation(), multiple_buffer_sequence, flags,
           handler2.value, self_->impl_.get_executor());
+#else // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+      throw std::runtime_error("io service does not implemented method "
+          "async_receive_multiple_buffer_sequence");
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     }
 
   private:
@@ -2974,11 +2991,17 @@ private:
       ASIO_READ_MULTIPLE_HANDLER_CHECK(ReadMultipleHandler, handler) type_check;
 
       detail::non_const_lvalue<ReadMultipleHandler> handler2(handler);
+
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
       self_->impl_.get_service().async_receive_multiple_buffer_sequence_from(
           self_->impl_.get_implementation(), multiple_buffer_sequence,
           flags, handler2.value, self_->impl_.get_executor());
+#else // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+      throw std::runtime_error("io service does not implemented method "
+          "async_receive_multiple_buffer_sequence_from");
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     }
-
+    
   private:
     basic_datagram_socket* self_;
   };
