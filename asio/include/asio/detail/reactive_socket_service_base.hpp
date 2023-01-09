@@ -485,9 +485,8 @@ public:
       MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags, asio::error_code& ec)
   {
-    return socket_ops::sync_recvmmsg(impl.socket_, impl.state_,
-        multiple_buffer_sequence, flags, multiple_buffer_sequence.all_empty(), 
-        ec);
+    return receive_multiple_buffer_sequence_with_flags(impl,
+        multiple_buffer_sequence, flags, ec);
   }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
@@ -506,10 +505,8 @@ public:
   size_t receive_multiple_buffer_sequence(base_implementation_type& impl,
       const null_buffers&, socket_base::message_flags, asio::error_code& ec)
   {
-    // Wait for socket to become ready.
-    socket_ops::poll_read(impl.socket_, impl.state_, -1, ec);
-
-    return 0;
+    null_buffers nb;
+    return receive_multiple_buffer_sequence_with_flags(impl, nb, 0, ec);
   }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
@@ -567,39 +564,8 @@ public:
       socket_base::message_flags flags, Handler& handler, 
       const IoExecutor& io_ex)
   {
-    bool is_continuation =
-      asio_handler_cont_helpers::is_continuation(handler);
-
-    typename associated_cancellation_slot<Handler>::type slot
-      = asio::get_associated_cancellation_slot(handler);
-
-    // Allocate and construct an operation to wrap the handler.
-    typedef reactive_socket_recvmmsg_op<
-        MultipleBufferSequence, Handler, IoExecutor> op;
-    typename op::ptr p = { asio::detail::addressof(handler),
-      op::ptr::allocate(handler), 0 };
-    p.p = new (p.v) op(success_ec_, impl.socket_,
-        impl.state_, multiple_buffer_sequence, flags, handler, io_ex);
-
-    // Optionally register for per-operation cancellation.
-    if (slot.is_connected())
-    {
-      p.p->cancellation_key_ =
-        &slot.template emplace<reactor_op_cancellation>(
-            &reactor_, &impl.reactor_data_, impl.socket_, reactor::read_op);
-    }
-
-    ASIO_HANDLER_CREATION((reactor_.context(), *p.p, "socket",
-          &impl, impl.socket_, "async_receive_multiple_buffer_sequence"));
-
-    start_op(impl,
-        (flags & socket_base::message_out_of_band)
-          ? reactor::except_op : reactor::read_op,
-        p.p, is_continuation,
-        (flags & socket_base::message_out_of_band) == 0,
-        ((impl.state_ & socket_ops::stream_oriented)
-          && multiple_buffer_sequence.all_empty()));
-    p.v = p.p = 0;
+    return async_receive_multiple_buffer_sequence_with_flags(impl, 
+        multiple_buffer_sequence, flags, handler, ec);
   }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
@@ -646,35 +612,9 @@ public:
       const null_buffers&, socket_base::message_flags flags,
       Handler& handler, const IoExecutor& io_ex)
   {
-    bool is_continuation =
-      asio_handler_cont_helpers::is_continuation(handler);
-
-    typename associated_cancellation_slot<Handler>::type slot
-      = asio::get_associated_cancellation_slot(handler);
-
-    // Allocate and construct an operation to wrap the handler.
-    typedef reactive_null_buffers_op<Handler, IoExecutor> op;
-    typename op::ptr p = { asio::detail::addressof(handler),
-      op::ptr::allocate(handler), 0 };
-    p.p = new (p.v) op(success_ec_, handler, io_ex);
-
-    // Optionally register for per-operation cancellation.
-    if (slot.is_connected())
-    {
-      p.p->cancellation_key_ =
-        &slot.template emplace<reactor_op_cancellation>(
-            &reactor_, &impl.reactor_data_, impl.socket_, reactor::read_op);
-    }
-
-    ASIO_HANDLER_CREATION((reactor_.context(), *p.p, "socket",
-          &impl, impl.socket_, 
-          "async_receive_multiple_buffer_sequence(null_buffers)"));
-
-    start_op(impl,
-        (flags & socket_base::message_out_of_band)
-          ? reactor::except_op : reactor::read_op,
-        p.p, is_continuation, false, false);
-    p.v = p.p = 0;
+    null_buffers nb;
+    return async_receive_multiple_buffer_sequence_with_flags(impl, nb; 0,
+        handler, ec);
   }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
