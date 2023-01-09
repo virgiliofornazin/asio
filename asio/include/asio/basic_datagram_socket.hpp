@@ -18,6 +18,7 @@
 #include "asio/detail/config.hpp"
 #include <cstddef>
 #include "asio/basic_socket.hpp"
+#include "asio/multiple_buffer_sequence.hpp"
 #include "asio/detail/handler_type_requirements.hpp"
 #include "asio/detail/non_const_lvalue.hpp"
 #include "asio/detail/throw_error.hpp"
@@ -62,6 +63,10 @@ private:
   class initiate_async_send_to;
   class initiate_async_receive;
   class initiate_async_receive_from;
+  class initiate_async_send_multiple_buffer_sequence;
+  class initiate_async_send_multiple_buffer_sequence_to;
+  class initiate_async_receive_multiple_buffer_sequence;
+  class initiate_async_receive_multiple_buffer_sequence_from;
 
 public:
   /// The type of the executor associated with the object.
@@ -379,6 +384,66 @@ public:
    * call will block until the data has been sent successfully or an error
    * occurs.
    *
+   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket.
+   *
+   * @returns The number of operations completed.
+   *
+   * @throws asio::system_error Thrown on failure.
+   *
+   * @note The send operation can only be used with a connected socket. Use
+   * the send_to function to send data on an unconnected datagram socket.
+   */
+  template <typename MultipleBufferSequence>
+  std::size_t send_multiple_buffer_sequence(
+      const MultipleBufferSequence& mutiple_buffer_sequence)
+  {
+    mutiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (mutiple_buffer_sequence.size() > 1)
+    {
+      asio::error_code ec;
+      std::size_t s = this->impl_.get_service().send_multiple_buffer_sequence(
+          this->impl_.get_implementation(), mutiple_buffer_sequence, 0, ec);
+      asio::detail::throw_error(ec, "send_multiple_buffer_sequence");
+      return s;
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to send the buffers one by one in case of missing system call for
+    // send_multiple_buffer_sequence...
+    std::size_t sent_buffers = 0;
+    typename MultipleBufferSequence::const_iterator iterator = 
+        mutiple_buffer_sequence.begin();
+    typename MultipleBufferSequence::const_iterator end = 
+        mutiple_buffer_sequence.end();
+    while (iterator != end)
+    {
+      const typename MultipleBufferSequence::value_type&
+          multiple_buffer_sequence_operation = *iterator;
+      const typename MultipleBufferSequence::buffer_sequence_type&
+          buffer_sequence = multiple_buffer_sequence_operation.
+          buffer_sequence();
+      asio::error_code ec;
+      std::size_t bytes_transferred = send(buffer_sequence, 0, ec);
+      multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+          ec);
+      asio::detail::throw_error(ec, "send_multiple_buffer_sequence");
+      if (bytes_transferred == 0)
+      {
+        break;
+      }
+      ++sent_buffers;
+      ++iterator;
+    }
+    return sent_buffers;
+  }
+
+  /// Send some data on a connected socket.
+  /**
+   * This function is used to send data on the datagram socket. The function
+   * call will block until the data has been sent successfully or an error
+   * occurs.
+   *
    * @param buffers One ore more data buffers to be sent on the socket.
    *
    * @param flags Flags specifying how the send call is to be made.
@@ -407,6 +472,69 @@ public:
    * call will block until the data has been sent successfully or an error
    * occurs.
    *
+   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket.
+   *
+   * @param flags Flags specifying how the send call is to be made.
+   *
+   * @returns The number of operations completed.
+   *
+   * @throws asio::system_error Thrown on failure.
+   *
+   * @note The send operation can only be used with a connected socket. Use
+   * the send_to function to send data on an unconnected datagram socket.
+   */
+  template <typename MultipleBufferSequence>
+  std::size_t send_multiple_buffer_sequence(
+      const MultipleBufferSequence& mutiple_buffer_sequence, 
+      socket_base::message_flags flags)
+  {
+    mutiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (mutiple_buffer_sequence.size() > 1)
+    {
+      asio::error_code ec;
+      std::size_t s = this->impl_.get_service().send_multiple_buffer_sequence(
+          this->impl_.get_implementation(), mutiple_buffer_sequence, flags, ec);
+      asio::detail::throw_error(ec, "send_multiple_buffer_sequence");
+      return s;
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to send the buffers one by one in case of missing system call for
+    // send_multiple_buffer_sequence...
+    std::size_t sent_buffers = 0;
+    typename MultipleBufferSequence::const_iterator iterator = 
+        mutiple_buffer_sequence.begin();
+    typename MultipleBufferSequence::const_iterator end = 
+        mutiple_buffer_sequence.end();
+    while (iterator != end)
+    {
+      const typename MultipleBufferSequence::value_type&
+          multiple_buffer_sequence_operation = *iterator;
+      const typename MultipleBufferSequence::buffer_sequence_type&
+          buffer_sequence = multiple_buffer_sequence_operation.
+          buffer_sequence();
+      asio::error_code ec;
+      std::size_t bytes_transferred = send(buffer_sequence, flags, ec);
+      multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+          ec);
+      asio::detail::throw_error(ec, "send_multiple_buffer_sequence");
+      if (bytes_transferred == 0)
+      {
+        break;
+      }
+      ++sent_buffers;
+      ++iterator;
+    }
+    return sent_buffers;
+  }
+
+  /// Send some data on a connected socket.
+  /**
+   * This function is used to send data on the datagram socket. The function
+   * call will block until the data has been sent successfully or an error
+   * occurs.
+   *
    * @param buffers One or more data buffers to be sent on the socket.
    *
    * @param flags Flags specifying how the send call is to be made.
@@ -424,6 +552,64 @@ public:
   {
     return this->impl_.get_service().send(
         this->impl_.get_implementation(), buffers, flags, ec);
+  }
+
+  /// Send some data on a connected socket.
+  /**
+   * This function is used to send data on the datagram socket. The function
+   * call will block until the data has been sent successfully or an error
+   * occurs.
+   *
+   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket.
+   *
+   * @param flags Flags specifying how the send call is to be made.
+   *
+   * @param ec Set to indicate what error occurred, if any.
+   *
+   * @returns The number of operations completed.
+   *
+   * @note The send operation can only be used with a connected socket. Use
+   * the send_to function to send data on an unconnected datagram socket.
+   */
+  template <typename MultipleBufferSequence>
+  std::size_t send_multiple_buffer_sequence(
+      const MultipleBufferSequence& mutiple_buffer_sequence, 
+      socket_base::message_flags flags, asio::error_code& ec)
+  {
+    mutiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (mutiple_buffer_sequence.size() > 1)
+    {
+      return this->impl_.get_service().send_multiple_buffer_sequence(
+        this->impl_.get_implementation(), mutiple_buffer_sequence, flags, ec);
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to send the buffers one by one in case of missing system call for
+    // send_multiple_buffer_sequence...
+    std::size_t sent_buffers = 0;
+    typename MultipleBufferSequence::const_iterator iterator = 
+        mutiple_buffer_sequence.begin();
+    typename MultipleBufferSequence::const_iterator end = 
+        mutiple_buffer_sequence.end();
+    while (iterator != end)
+    {
+      const typename MultipleBufferSequence::value_type&
+          multiple_buffer_sequence_operation = *iterator;
+      const typename MultipleBufferSequence::buffer_sequence_type&
+          buffer_sequence = multiple_buffer_sequence_operation.
+          buffer_sequence();
+      std::size_t bytes_transferred = send(buffer_sequence, flags, ec);
+      multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+          ec);
+      if (bytes_transferred == 0)
+      {
+        break;
+      }
+      ++sent_buffers;
+      ++iterator;
+    }
+    return sent_buffers;
   }
 
   /// Start an asynchronous send on a connected socket.
@@ -504,6 +690,109 @@ public:
    * It is an initiating function for an @ref asynchronous_operation, and always
    * returns immediately.
    *
+   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. Although the buffers object may be copied as necessary, ownership
+   * of the underlying memory blocks is retained by the caller, which must 
+   * guarantee that they remain valid until the completion handler is called.
+   *
+   * @param token The @ref completion_token that will be used to produce a
+   * completion handler, which will be called when the send completes. Potential
+   * completion tokens include @ref use_future, @ref use_awaitable, @ref
+   * yield_context, or a function object with the correct completion signature.
+   * The function signature of the completion handler must be:
+   * @code void handler(
+   *   const asio::error_code& error, // Result of operation.
+   *   std::size_t current_buffer, // Number of current buffer.
+   *   std::size_t total_buffers, // Number of total buffers.
+   *   std::size_t bytes_transferred  // Number of bytes sent.
+   * ); @endcode
+   * Regardless of whether the asynchronous operation completes immediately or
+   * not, the completion handler will not be invoked from within this function.
+   * On immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
+   *
+   * @par Completion Signature
+   * @code void(asio::error_code, std::size_t, std::size_t, std::size_t)
+   * @endcode
+   *
+   * @note The async_send_mutiple_buffer_sequence operation can only be used 
+   * with a connected socket.Use the async_send_to function to send data on an 
+   * unconnected datagram socket.
+   *
+   * @par Per-Operation Cancellation
+   * On POSIX or Windows operating systems, this asynchronous operation supports
+   * cancellation for the following asio::cancellation_type values:
+   *
+   * @li @c cancellation_type::terminal
+   *
+   * @li @c cancellation_type::partial
+   *
+   * @li @c cancellation_type::total
+   */
+  template <typename MultipleBufferSequence,
+      ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
+        std::size_t, std::size_t, std::size_t)) WriteMultipleToken
+          ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
+  ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(WriteMultipleToken,
+      void (asio::error_code, std::size_t, std::size_t, std::size_t))
+  async_send_mutiple_buffer_sequence(
+      const MultipleBufferSequence& mutiple_buffer_sequence,
+      ASIO_MOVE_ARG(WriteMultipleToken) token
+        ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
+    ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
+      async_initiate<WriteMultipleToken,
+        void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
+          declval<initiate_async_send_mutiple_buffer_sequence>(), token,
+          mutiple_buffer_sequence, socket_base::message_flags(0))))
+  {
+    mutiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (mutiple_buffer_sequence.size() > 1)
+    {
+      return async_initiate<WriteMultipleToken,
+        void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
+          initiate_async_send_mutiple_buffer_sequence(this), token,
+          mutiple_buffer_sequence, socket_base::message_flags(0));
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to send the buffers one by one in case of missing system call for
+    // send_multiple_buffer_sequence...
+    typename MultipleBufferSequence::const_iterator iterator = 
+        mutiple_buffer_sequence.begin();
+    typename MultipleBufferSequence::const_iterator end = 
+        mutiple_buffer_sequence.end();
+    std::size_t multiple_buffer_sequence_operation_index = 0;
+    std::size_t multiple_buffer_sequence_operation_count = 
+        mutiple_buffer_sequence.size();
+    while (iterator != end)
+    {
+      const typename MultipleBufferSequence::value_type&
+          multiple_buffer_sequence_operation = *iterator;
+      const typename MultipleBufferSequence::buffer_sequence_type&
+          buffer_sequence = multiple_buffer_sequence_operation.
+          buffer_sequence();
+      auto composed_token = [ASIO_MOVE_ARG(WriteMultipleToken) token, 
+          &multiple_buffer_sequence_operation, 
+          multiple_buffer_sequence_operation_index,
+          multiple_buffer_sequence_operation_count](asio::error_code ec, 
+            std::size_t bytes_transferred) mutable
+      {
+        multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+            ec);
+        token(ec, multiple_buffer_sequence_operation_index.
+            multiple_buffer_sequence_operation_count, bytes_transferred);
+      };
+      async_send(buffer_sequence, composed_token);
+      ++iterator;
+    }
+  }
+
+  /// Start an asynchronous send on a connected socket.
+  /**
+   * This function is used to asynchronously send data on the datagram socket.
+   * It is an initiating function for an @ref asynchronous_operation, and always
+   * returns immediately.
+   *
    * @param buffers One or more data buffers to be sent on the socket. Although
    * the buffers object may be copied as necessary, ownership of the underlying
    * memory blocks is retained by the caller, which must guarantee that they
@@ -562,6 +851,112 @@ public:
         initiate_async_send(this), token, buffers, flags);
   }
 
+  /// Start an asynchronous send on a connected socket.
+  /**
+   * This function is used to asynchronously send data on the datagram socket.
+   * It is an initiating function for an @ref asynchronous_operation, and always
+   * returns immediately.
+   *
+   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. Although the buffers object may be copied as necessary, ownership
+   * of the underlying memory blocks is retained by the caller, which must 
+   * guarantee that they remain valid until the completion handler is called.
+   *
+   * @param flags Flags specifying how the send call is to be made.
+   *
+   * @param token The @ref completion_token that will be used to produce a
+   * completion handler, which will be called when the send completes. Potential
+   * completion tokens include @ref use_future, @ref use_awaitable, @ref
+   * yield_context, or a function object with the correct completion signature.
+   * The function signature of the completion handler must be:
+   * @code void handler(
+   *   const asio::error_code& error, // Result of operation.
+   *   std::size_t current_buffer, // Number of current buffer.
+   *   std::size_t total_buffers, // Number of total buffers.
+   *   std::size_t bytes_transferred  // Number of bytes sent.
+   * ); @endcode
+   * Regardless of whether the asynchronous operation completes immediately or
+   * not, the completion handler will not be invoked from within this function.
+   * On immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
+   *
+   * @par Completion Signature
+   * @code void(asio::error_code, std::size_t, std::size_t, std::size_t)
+   * @endcode
+   *
+   * @note The async_send_mutiple_buffer_sequence operation can only be used 
+   * with a connected socket.Use the async_send_to function to send data on an 
+   * unconnected datagram socket.
+   *
+   * @par Per-Operation Cancellation
+   * On POSIX or Windows operating systems, this asynchronous operation supports
+   * cancellation for the following asio::cancellation_type values:
+   *
+   * @li @c cancellation_type::terminal
+   *
+   * @li @c cancellation_type::partial
+   *
+   * @li @c cancellation_type::total
+   */
+  template <typename MultipleBufferSequence,
+      ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
+        std::size_t, std::size_t, std::size_t)) WriteMultipleToken
+          ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
+  ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(WriteMultipleToken,
+      void (asio::error_code, std::size_t, std::size_t, std::size_t))
+  async_send_mutiple_buffer_sequence(
+      const MultipleBufferSequence& mutiple_buffer_sequence,
+      socket_base::message_flags flags,
+      ASIO_MOVE_ARG(WriteMultipleToken) token
+        ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
+    ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
+      async_initiate<WriteMultipleToken,
+        void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
+          declval<initiate_async_send_mutiple_buffer_sequence>(), token,
+          mutiple_buffer_sequence, flags)))
+  {
+    mutiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (mutiple_buffer_sequence.size() > 1)
+    {
+      return async_initiate<WriteMultipleToken,
+        void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
+          initiate_async_send_mutiple_buffer_sequence(this), token,
+          mutiple_buffer_sequence, flags);
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to send the buffers one by one in case of missing system call for
+    // send_multiple_buffer_sequence...
+    typename MultipleBufferSequence::const_iterator iterator = 
+        mutiple_buffer_sequence.begin();
+    typename MultipleBufferSequence::const_iterator end = 
+        mutiple_buffer_sequence.end();
+    std::size_t multiple_buffer_sequence_operation_index = 0;
+    std::size_t multiple_buffer_sequence_operation_count = 
+        mutiple_buffer_sequence.size();
+    while (iterator != end)
+    {
+      const typename MultipleBufferSequence::value_type&
+          multiple_buffer_sequence_operation = *iterator;
+      const typename MultipleBufferSequence::buffer_sequence_type&
+          buffer_sequence = multiple_buffer_sequence_operation.
+          buffer_sequence();
+      auto composed_token = [ASIO_MOVE_ARG(WriteMultipleToken) token, 
+          &multiple_buffer_sequence_operation, 
+          multiple_buffer_sequence_operation_index,
+          multiple_buffer_sequence_operation_count](asio::error_code ec, 
+            std::size_t bytes_transferred) mutable
+      {
+        multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+            ec);
+        token(ec, multiple_buffer_sequence_operation_index.
+            multiple_buffer_sequence_operation_count, bytes_transferred);
+      };
+      async_send(buffer_sequence, flags, composed_token);
+      ++iterator;
+    }
+  }  
+
   /// Send a datagram to the specified endpoint.
   /**
    * This function is used to send a datagram to the specified remote endpoint.
@@ -598,6 +993,66 @@ public:
     return s;
   }
 
+  /// Send a multiple datagrams to the specified endpoint.
+  /**
+   * This function is used to send a datagram to the specified remote endpoint.
+   * The function call will block until the data has been sent successfully or
+   * an error occurs.
+   *
+   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. The destination are also paired with data buffers.
+   *
+   * @returns The number of operations completed.
+   *
+   * @throws asio::system_error Thrown on failure.
+   */
+  template <typename MultipleBufferSequence>
+  std::size_t send_mutiple_buffer_sequence_to(
+      const MultipleBufferSequence& mutiple_buffer_sequence)
+  {    
+    mutiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (mutiple_buffer_sequence.size() > 1)
+    {
+      asio::error_code ec;
+      std::size_t s = this->impl_.get_service().send_mutiple_buffer_sequence_to(
+          this->impl_.get_implementation(), mutiple_buffer_sequence, destination
+          , 0, ec);
+      asio::detail::throw_error(ec, "send_mutiple_buffer_sequence_to");
+      return s;
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to send the buffers one by one in case of missing system call for
+    // send_multiple_buffer_sequence...
+    std::size_t sent_buffers = 0;
+    typename MultipleBufferSequence::const_iterator iterator = 
+        mutiple_buffer_sequence.begin();
+    typename MultipleBufferSequence::const_iterator end = 
+        mutiple_buffer_sequence.end();
+    while (iterator != end)
+    {
+      const typename MultipleBufferSequence::value_type&
+          multiple_buffer_sequence_operation = *iterator;
+      const typename MultipleBufferSequence::buffer_sequence_type&
+          buffer_sequence = multiple_buffer_sequence_operation.
+          buffer_sequence();
+      const typename MultipleBufferSequence::endpoint& endpoint = 
+          multiple_buffer_sequence_operation.endpoint();
+      asio::error_code ec;
+      std::size_t bytes_transferred = send_to(buffer_sequence, endpoint, 0, ec);
+      multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+          ec);
+      asio::detail::throw_error(ec, "send_mutiple_buffer_sequence_to");
+      if (bytes_transferred == 0)
+      {
+        break;
+      }
+      ++sent_buffers;
+      ++iterator;
+    }
+    return sent_buffers;    
+  }
+
   /// Send a datagram to the specified endpoint.
   /**
    * This function is used to send a datagram to the specified remote endpoint.
@@ -625,6 +1080,70 @@ public:
     return s;
   }
 
+  /// Send a multiple datagrams to the specified endpoint.
+  /**
+   * This function is used to send a datagram to the specified remote endpoint.
+   * The function call will block until the data has been sent successfully or
+   * an error occurs.
+   *
+   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. The destination are also paired with data buffers.
+   *
+   * @param flags Flags specifying how the send call is to be made.
+   *
+   * @returns The number of operations completed.
+   *
+   * @throws asio::system_error Thrown on failure.
+   */
+  template <typename MultipleBufferSequence>
+  std::size_t send_mutiple_buffer_sequence_to(
+      const MultipleBufferSequence& mutiple_buffer_sequence,
+      socket_base::message_flags flags)
+  {    
+    mutiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (mutiple_buffer_sequence.size() > 1)
+    {
+      asio::error_code ec;
+      std::size_t s = this->impl_.get_service().send_mutiple_buffer_sequence_to(
+          this->impl_.get_implementation(), mutiple_buffer_sequence, destination
+          , flags, ec);
+      asio::detail::throw_error(ec, "send_mutiple_buffer_sequence_to");
+      return s;
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to send the buffers one by one in case of missing system call for
+    // send_multiple_buffer_sequence...
+    std::size_t sent_buffers = 0;
+    typename MultipleBufferSequence::const_iterator iterator = 
+        mutiple_buffer_sequence.begin();
+    typename MultipleBufferSequence::const_iterator end = 
+        mutiple_buffer_sequence.end();
+    while (iterator != end)
+    {
+      const typename MultipleBufferSequence::value_type&
+          multiple_buffer_sequence_operation = *iterator;
+      const typename MultipleBufferSequence::buffer_sequence_type&
+          buffer_sequence = multiple_buffer_sequence_operation.
+          buffer_sequence();
+      const typename MultipleBufferSequence::endpoint& endpoint = 
+          multiple_buffer_sequence_operation.endpoint();
+      asio::error_code ec;
+      std::size_t bytes_transferred = send_to(buffer_sequence, endpoint, flags,
+          ec);
+      multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+          ec);
+      asio::detail::throw_error(ec, "send_mutiple_buffer_sequence_to");
+      if (bytes_transferred == 0)
+      {
+        break;
+      }
+      ++sent_buffers;
+      ++iterator;
+    }
+    return sent_buffers;    
+  }
+
   /// Send a datagram to the specified endpoint.
   /**
    * This function is used to send a datagram to the specified remote endpoint.
@@ -648,6 +1167,67 @@ public:
   {
     return this->impl_.get_service().send_to(this->impl_.get_implementation(),
         buffers, destination, flags, ec);
+  }
+
+  /// Send a multiple datagrams to the specified endpoint.
+  /**
+   * This function is used to send a datagram to the specified remote endpoint.
+   * The function call will block until the data has been sent successfully or
+   * an error occurs.
+   *
+   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. The destination are also paired with data buffers.
+   *
+   * @param flags Flags specifying how the send call is to be made.
+   *
+   * @param ec Set to indicate what error occurred, if any.
+   *
+   * @returns The number of operations completed.
+   *
+   * @throws asio::system_error Thrown on failure.
+   */
+  template <typename MultipleBufferSequence>
+  std::size_t send_mutiple_buffer_sequence_to(
+      const MultipleBufferSequence& mutiple_buffer_sequence,
+      socket_base::message_flags flags, asio::error_code& ec)
+  {    
+    mutiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (mutiple_buffer_sequence.size() > 1)
+    {
+      return this->impl_.get_service().send_mutiple_buffer_sequence_to(
+          this->impl_.get_implementation(), mutiple_buffer_sequence, destination
+          , flags, ec);
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to send the buffers one by one in case of missing system call for
+    // send_multiple_buffer_sequence...
+    std::size_t sent_buffers = 0;
+    typename MultipleBufferSequence::const_iterator iterator = 
+        mutiple_buffer_sequence.begin();
+    typename MultipleBufferSequence::const_iterator end = 
+        mutiple_buffer_sequence.end();
+    while (iterator != end)
+    {
+      const typename MultipleBufferSequence::value_type&
+          multiple_buffer_sequence_operation = *iterator;
+      const typename MultipleBufferSequence::buffer_sequence_type&
+          buffer_sequence = multiple_buffer_sequence_operation.
+          buffer_sequence();
+      const typename MultipleBufferSequence::endpoint& endpoint = 
+          multiple_buffer_sequence_operation.endpoint();
+      std::size_t bytes_transferred = send_to(buffer_sequence, endpoint, flags,
+          ec);
+      multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+          ec);
+      if (bytes_transferred == 0)
+      {
+        break;
+      }
+      ++sent_buffers;
+      ++iterator;
+    }
+    return sent_buffers;    
   }
 
   /// Start an asynchronous send.
@@ -731,6 +1311,108 @@ public:
    * remote endpoint. It is an initiating function for an @ref
    * asynchronous_operation, and always returns immediately.
    *
+   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. Although the buffers object may be copied as necessary, ownership
+   * of the underlying memory blocks is retained by the caller, which must 
+   * guarantee that they remain valid until the completion handler is called. 
+   * The destination are also paired with data buffers.
+   *
+   * @param token The @ref completion_token that will be used to produce a
+   * completion handler, which will be called when the send completes. Potential
+   * completion tokens include @ref use_future, @ref use_awaitable, @ref
+   * yield_context, or a function object with the correct completion signature.
+   * The function signature of the completion handler must be:
+   * @code void handler(
+   *   const asio::error_code& error, // Result of operation.
+   *   std::size_t current_buffer, // Number of current buffer.
+   *   std::size_t total_buffers, // Number of total buffers.
+   *   std::size_t bytes_transferred  // Number of bytes sent.
+   * ); @endcode
+   * Regardless of whether the asynchronous operation completes immediately or
+   * not, the completion handler will not be invoked from within this function.
+   * On immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
+   *
+   * @par Completion Signature
+   * @code void(asio::error_code, std::size_t, std::size_t, std::size_t)
+   * @endcode
+   *
+   * @par Per-Operation Cancellation
+   * On POSIX or Windows operating systems, this asynchronous operation supports
+   * cancellation for the following asio::cancellation_type values:
+   *
+   * @li @c cancellation_type::terminal
+   *
+   * @li @c cancellation_type::partial
+   *
+   * @li @c cancellation_type::total
+   */
+  template <typename MultipleBufferSequence,
+      ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
+        std::size_t, std::size_t, std::size_t)) WriteMultipleToken
+          ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
+  ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(WriteMultipleToken,
+      void (asio::error_code, std::size_t, std::size_t, std::size_t))
+  async_send_mutiple_buffer_sequence_to(
+      const MultipleBufferSequence& mutiple_buffer_sequence,
+      ASIO_MOVE_ARG(WriteMultipleToken) token
+        ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
+    ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
+      async_initiate<WriteMultipleToken,
+        void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
+          declval<initiate_async_send_mutiple_buffer_sequence_to>(), token,
+          mutiple_buffer_sequence, socket_base::message_flags(0))))
+  {
+    mutiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (mutiple_buffer_sequence.size() > 1)
+    {
+      return async_initiate<WriteMultipleToken,
+        void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
+          initiate_async_send_mutiple_buffer_sequence_to(this), token, buffers,
+          socket_base::message_flags(0));
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to send the buffers one by one in case of missing system call for
+    // send_multiple_buffer_sequence...
+    typename MultipleBufferSequence::const_iterator iterator = 
+        mutiple_buffer_sequence.begin();
+    typename MultipleBufferSequence::const_iterator end = 
+        mutiple_buffer_sequence.end();
+    std::size_t multiple_buffer_sequence_operation_index = 0;
+    std::size_t multiple_buffer_sequence_operation_count = 
+        mutiple_buffer_sequence.size();
+    while (iterator != end)
+    {
+      const typename MultipleBufferSequence::value_type&
+          multiple_buffer_sequence_operation = *iterator;
+      const typename MultipleBufferSequence::buffer_sequence_type&
+          buffer_sequence = multiple_buffer_sequence_operation.
+          buffer_sequence();
+      const typename MultipleBufferSequence::endpoint& endpoint = 
+          multiple_buffer_sequence_operation.endpoint();
+      auto composed_token = [ASIO_MOVE_ARG(WriteMultipleToken) token, 
+          &multiple_buffer_sequence_operation, 
+          multiple_buffer_sequence_operation_index,
+          multiple_buffer_sequence_operation_count](asio::error_code ec, 
+            std::size_t bytes_transferred) mutable
+      {
+        multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+            ec);
+        token(ec, multiple_buffer_sequence_operation_index.
+            multiple_buffer_sequence_operation_count, bytes_transferred);
+      };
+      async_send_to(buffer_sequence, endpoint, composed_token);
+      ++iterator;
+    }
+  }
+
+  /// Start an asynchronous send.
+  /**
+   * This function is used to asynchronously send a datagram to the specified
+   * remote endpoint. It is an initiating function for an @ref
+   * asynchronous_operation, and always returns immediately.
+   *
    * @param buffers One or more data buffers to be sent to the remote endpoint.
    * Although the buffers object may be copied as necessary, ownership of the
    * underlying memory blocks is retained by the caller, which must guarantee
@@ -788,6 +1470,111 @@ public:
       void (asio::error_code, std::size_t)>(
         initiate_async_send_to(this), token,
         buffers, destination, flags);
+  }
+
+  /// Start an asynchronous send.
+  /**
+   * This function is used to asynchronously send a datagram to the specified
+   * remote endpoint. It is an initiating function for an @ref
+   * asynchronous_operation, and always returns immediately.
+   *
+   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. Although the buffers object may be copied as necessary, ownership
+   * of the underlying memory blocks is retained by the caller, which must 
+   * guarantee that they remain valid until the completion handler is called. 
+   * The destination are also paired with data buffers.
+   *
+   * @param flags Flags specifying how the send call is to be made.
+   *
+   * @param token The @ref completion_token that will be used to produce a
+   * completion handler, which will be called when the send completes. Potential
+   * completion tokens include @ref use_future, @ref use_awaitable, @ref
+   * yield_context, or a function object with the correct completion signature.
+   * The function signature of the completion handler must be:
+   * @code void handler(
+   *   const asio::error_code& error, // Result of operation.
+   *   std::size_t current_buffer, // Number of current buffer.
+   *   std::size_t total_buffers, // Number of total buffers.
+   *   std::size_t bytes_transferred  // Number of bytes sent.
+   * ); @endcode
+   * Regardless of whether the asynchronous operation completes immediately or
+   * not, the completion handler will not be invoked from within this function.
+   * On immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
+   *
+   * @par Completion Signature
+   * @code void(asio::error_code, std::size_t, std::size_t, std::size_t)
+   * @endcode
+   *
+   * @par Per-Operation Cancellation
+   * On POSIX or Windows operating systems, this asynchronous operation supports
+   * cancellation for the following asio::cancellation_type values:
+   *
+   * @li @c cancellation_type::terminal
+   *
+   * @li @c cancellation_type::partial
+   *
+   * @li @c cancellation_type::total
+   */
+  template <typename MultipleBufferSequence,
+      ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
+        std::size_t, std::size_t, std::size_t)) WriteMultipleToken
+          ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
+  ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(WriteMultipleToken,
+      void (asio::error_code, std::size_t, std::size_t, std::size_t))
+  async_send_mutiple_buffer_sequence_to(
+      const MultipleBufferSequence& mutiple_buffer_sequence,
+      socket_base::message_flags flags,
+      ASIO_MOVE_ARG(WriteMultipleToken) token
+        ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
+    ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
+      async_initiate<WriteMultipleToken,
+        void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
+          declval<initiate_async_send_mutiple_buffer_sequence_to>(), token,
+          mutiple_buffer_sequence, flags)))
+  {
+    mutiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (mutiple_buffer_sequence.size() > 1)
+    {
+      return async_initiate<WriteMultipleToken,
+        void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
+          initiate_async_send_mutiple_buffer_sequence_to(this), token, buffers,
+          flags);
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to send the buffers one by one in case of missing system call for
+    // send_multiple_buffer_sequence...
+    typename MultipleBufferSequence::const_iterator iterator = 
+        mutiple_buffer_sequence.begin();
+    typename MultipleBufferSequence::const_iterator end = 
+        mutiple_buffer_sequence.end();
+    std::size_t multiple_buffer_sequence_operation_index = 0;
+    std::size_t multiple_buffer_sequence_operation_count = 
+        mutiple_buffer_sequence.size();
+    while (iterator != end)
+    {
+      const typename MultipleBufferSequence::value_type&
+          multiple_buffer_sequence_operation = *iterator;
+      const typename MultipleBufferSequence::buffer_sequence_type&
+          buffer_sequence = multiple_buffer_sequence_operation.
+          buffer_sequence();
+      const typename MultipleBufferSequence::endpoint& endpoint = 
+          multiple_buffer_sequence_operation.endpoint();
+      auto composed_token = [ASIO_MOVE_ARG(WriteMultipleToken) token, 
+          &multiple_buffer_sequence_operation, 
+          multiple_buffer_sequence_operation_index,
+          multiple_buffer_sequence_operation_count](asio::error_code ec, 
+            std::size_t bytes_transferred) mutable
+      {
+        multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+            ec);
+        token(ec, multiple_buffer_sequence_operation_index.
+            multiple_buffer_sequence_operation_count, bytes_transferred);
+      };
+      async_send_to(buffer_sequence, endpoint, flags, composed_token);
+      ++iterator;
+    }
   }
 
   /// Receive some data on a connected socket.
