@@ -696,15 +696,15 @@ public:
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
   // Receive some data with associated flags. Returns the number of bytes
   // received.
-  template <typename MutableBufferSequence>
+  template <typename MultipleBufferSequence>
   size_t receive_multiple_buffer_sequence_with_flags(
       base_implementation_type& impl,
       MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags in_flags, asio::error_code& ec)
   {
     return socket_ops::sync_recvmmsg(impl.socket_, impl.state_,
-        multiple_buffer_sequence, flags, multiple_buffer_sequence.all_empty(), 
-        ec);
+        multiple_buffer_sequence, in_flags, 
+        multiple_buffer_sequence.all_empty(), ec);
   }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
@@ -797,7 +797,7 @@ public:
 
     // Allocate and construct an operation to wrap the handler.
     typedef reactive_socket_recvmsg_op<
-        MutableBufferSequence, Handler, IoExecutor> op;
+        MultipleBufferSequence, Handler, IoExecutor> op;
     typename op::ptr p = { asio::detail::addressof(handler),
       op::ptr::allocate(handler), 0 };
     p.p = new (p.v) op(success_ec_, impl.socket_,
