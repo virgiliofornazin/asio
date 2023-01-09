@@ -384,7 +384,7 @@ public:
    * call will block until the data has been sent successfully or an error
    * occurs.
    *
-   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
    * socket.
    *
    * @returns The number of operations completed.
@@ -396,15 +396,15 @@ public:
    */
   template <typename MultipleBufferSequence>
   std::size_t send_multiple_buffer_sequence(
-      const MultipleBufferSequence& mutiple_buffer_sequence)
+      const MultipleBufferSequence& multiple_buffer_sequence)
   {
-    mutiple_buffer_sequence.throw_if_empty();
+    multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (mutiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.size() > 1)
     {
       asio::error_code ec;
       std::size_t s = this->impl_.get_service().send_multiple_buffer_sequence(
-          this->impl_.get_implementation(), mutiple_buffer_sequence, 0, ec);
+          this->impl_.get_implementation(), multiple_buffer_sequence, 0, ec);
       asio::detail::throw_error(ec, "send_multiple_buffer_sequence");
       return s;
     }
@@ -413,9 +413,9 @@ public:
     // send_multiple_buffer_sequence...
     std::size_t sent_buffers = 0;
     typename MultipleBufferSequence::const_iterator iterator = 
-        mutiple_buffer_sequence.begin();
+        multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::const_iterator end = 
-        mutiple_buffer_sequence.end();
+        multiple_buffer_sequence.end();
     while (iterator != end)
     {
       const typename MultipleBufferSequence::value_type&
@@ -472,7 +472,7 @@ public:
    * call will block until the data has been sent successfully or an error
    * occurs.
    *
-   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
    * socket.
    *
    * @param flags Flags specifying how the send call is to be made.
@@ -486,16 +486,17 @@ public:
    */
   template <typename MultipleBufferSequence>
   std::size_t send_multiple_buffer_sequence(
-      const MultipleBufferSequence& mutiple_buffer_sequence, 
+      const MultipleBufferSequence& multiple_buffer_sequence, 
       socket_base::message_flags flags)
   {
-    mutiple_buffer_sequence.throw_if_empty();
+    multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (mutiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.size() > 1)
     {
       asio::error_code ec;
       std::size_t s = this->impl_.get_service().send_multiple_buffer_sequence(
-          this->impl_.get_implementation(), mutiple_buffer_sequence, flags, ec);
+          this->impl_.get_implementation(), multiple_buffer_sequence, flags, 
+          ec);
       asio::detail::throw_error(ec, "send_multiple_buffer_sequence");
       return s;
     }
@@ -504,9 +505,9 @@ public:
     // send_multiple_buffer_sequence...
     std::size_t sent_buffers = 0;
     typename MultipleBufferSequence::const_iterator iterator = 
-        mutiple_buffer_sequence.begin();
+        multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::const_iterator end = 
-        mutiple_buffer_sequence.end();
+        multiple_buffer_sequence.end();
     while (iterator != end)
     {
       const typename MultipleBufferSequence::value_type&
@@ -560,7 +561,7 @@ public:
    * call will block until the data has been sent successfully or an error
    * occurs.
    *
-   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
    * socket.
    *
    * @param flags Flags specifying how the send call is to be made.
@@ -574,24 +575,24 @@ public:
    */
   template <typename MultipleBufferSequence>
   std::size_t send_multiple_buffer_sequence(
-      const MultipleBufferSequence& mutiple_buffer_sequence, 
+      const MultipleBufferSequence& multiple_buffer_sequence, 
       socket_base::message_flags flags, asio::error_code& ec)
   {
-    mutiple_buffer_sequence.throw_if_empty();
+    multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (mutiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.size() > 1)
     {
       return this->impl_.get_service().send_multiple_buffer_sequence(
-        this->impl_.get_implementation(), mutiple_buffer_sequence, flags, ec);
+        this->impl_.get_implementation(), multiple_buffer_sequence, flags, ec);
     }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     // Try to send the buffers one by one in case of missing system call for
     // send_multiple_buffer_sequence...
     std::size_t sent_buffers = 0;
     typename MultipleBufferSequence::const_iterator iterator = 
-        mutiple_buffer_sequence.begin();
+        multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::const_iterator end = 
-        mutiple_buffer_sequence.end();
+        multiple_buffer_sequence.end();
     while (iterator != end)
     {
       const typename MultipleBufferSequence::value_type&
@@ -690,7 +691,7 @@ public:
    * It is an initiating function for an @ref asynchronous_operation, and always
    * returns immediately.
    *
-   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
    * socket. Although the buffers object may be copied as necessary, ownership
    * of the underlying memory blocks is retained by the caller, which must 
    * guarantee that they remain valid until the completion handler is called.
@@ -715,7 +716,7 @@ public:
    * @code void(asio::error_code, std::size_t, std::size_t, std::size_t)
    * @endcode
    *
-   * @note The async_send_mutiple_buffer_sequence operation can only be used 
+   * @note The async_send_multiple_buffer_sequence operation can only be used 
    * with a connected socket.Use the async_send_to function to send data on an 
    * unconnected datagram socket.
    *
@@ -735,35 +736,35 @@ public:
           ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
   ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(WriteMultipleToken,
       void (asio::error_code, std::size_t, std::size_t, std::size_t))
-  async_send_mutiple_buffer_sequence(
-      const MultipleBufferSequence& mutiple_buffer_sequence,
+  async_send_multiple_buffer_sequence(
+      const MultipleBufferSequence& multiple_buffer_sequence,
       ASIO_MOVE_ARG(WriteMultipleToken) token
         ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
     ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
       async_initiate<WriteMultipleToken,
         void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
-          declval<initiate_async_send_mutiple_buffer_sequence>(), token,
-          mutiple_buffer_sequence, socket_base::message_flags(0))))
+          declval<initiate_async_send_multiple_buffer_sequence>(), token,
+          multiple_buffer_sequence, socket_base::message_flags(0))))
   {
-    mutiple_buffer_sequence.throw_if_empty();
+    multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (mutiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.size() > 1)
     {
       return async_initiate<WriteMultipleToken,
         void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
-          initiate_async_send_mutiple_buffer_sequence(this), token,
-          mutiple_buffer_sequence, socket_base::message_flags(0));
+          initiate_async_send_multiple_buffer_sequence(this), token,
+          multiple_buffer_sequence, socket_base::message_flags(0));
     }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     // Try to send the buffers one by one in case of missing system call for
     // send_multiple_buffer_sequence...
     typename MultipleBufferSequence::const_iterator iterator = 
-        mutiple_buffer_sequence.begin();
+        multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::const_iterator end = 
-        mutiple_buffer_sequence.end();
+        multiple_buffer_sequence.end();
     std::size_t multiple_buffer_sequence_operation_index = 0;
     std::size_t multiple_buffer_sequence_operation_count = 
-        mutiple_buffer_sequence.size();
+        multiple_buffer_sequence.size();
     while (iterator != end)
     {
       const typename MultipleBufferSequence::value_type&
@@ -857,7 +858,7 @@ public:
    * It is an initiating function for an @ref asynchronous_operation, and always
    * returns immediately.
    *
-   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
    * socket. Although the buffers object may be copied as necessary, ownership
    * of the underlying memory blocks is retained by the caller, which must 
    * guarantee that they remain valid until the completion handler is called.
@@ -884,7 +885,7 @@ public:
    * @code void(asio::error_code, std::size_t, std::size_t, std::size_t)
    * @endcode
    *
-   * @note The async_send_mutiple_buffer_sequence operation can only be used 
+   * @note The async_send_multiple_buffer_sequence operation can only be used 
    * with a connected socket.Use the async_send_to function to send data on an 
    * unconnected datagram socket.
    *
@@ -904,36 +905,36 @@ public:
           ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
   ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(WriteMultipleToken,
       void (asio::error_code, std::size_t, std::size_t, std::size_t))
-  async_send_mutiple_buffer_sequence(
-      const MultipleBufferSequence& mutiple_buffer_sequence,
+  async_send_multiple_buffer_sequence(
+      const MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags,
       ASIO_MOVE_ARG(WriteMultipleToken) token
         ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
     ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
       async_initiate<WriteMultipleToken,
         void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
-          declval<initiate_async_send_mutiple_buffer_sequence>(), token,
-          mutiple_buffer_sequence, flags)))
+          declval<initiate_async_send_multiple_buffer_sequence>(), token,
+          multiple_buffer_sequence, flags)))
   {
-    mutiple_buffer_sequence.throw_if_empty();
+    multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (mutiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.size() > 1)
     {
       return async_initiate<WriteMultipleToken,
         void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
-          initiate_async_send_mutiple_buffer_sequence(this), token,
-          mutiple_buffer_sequence, flags);
+          initiate_async_send_multiple_buffer_sequence(this), token,
+          multiple_buffer_sequence, flags);
     }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     // Try to send the buffers one by one in case of missing system call for
     // send_multiple_buffer_sequence...
     typename MultipleBufferSequence::const_iterator iterator = 
-        mutiple_buffer_sequence.begin();
+        multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::const_iterator end = 
-        mutiple_buffer_sequence.end();
+        multiple_buffer_sequence.end();
     std::size_t multiple_buffer_sequence_operation_index = 0;
     std::size_t multiple_buffer_sequence_operation_count = 
-        mutiple_buffer_sequence.size();
+        multiple_buffer_sequence.size();
     while (iterator != end)
     {
       const typename MultipleBufferSequence::value_type&
@@ -999,26 +1000,26 @@ public:
    * The function call will block until the data has been sent successfully or
    * an error occurs.
    *
-   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
-   * socket. The destination are also paired with data buffers.
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. The destination remote endpoint are also paired with data buffers.
    *
    * @returns The number of operations completed.
    *
    * @throws asio::system_error Thrown on failure.
    */
   template <typename MultipleBufferSequence>
-  std::size_t send_mutiple_buffer_sequence_to(
-      const MultipleBufferSequence& mutiple_buffer_sequence)
+  std::size_t send_multiple_buffer_sequence_to(
+      const MultipleBufferSequence& multiple_buffer_sequence)
   {    
-    mutiple_buffer_sequence.throw_if_empty();
+    multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (mutiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.size() > 1)
     {
       asio::error_code ec;
-      std::size_t s = this->impl_.get_service().send_mutiple_buffer_sequence_to(
-          this->impl_.get_implementation(), mutiple_buffer_sequence, destination
-          , 0, ec);
-      asio::detail::throw_error(ec, "send_mutiple_buffer_sequence_to");
+      std::size_t s = this->impl_.get_service().
+          send_multiple_buffer_sequence_to(this->impl_.get_implementation(),
+          multiple_buffer_sequence, destination, 0, ec);
+      asio::detail::throw_error(ec, "send_multiple_buffer_sequence_to");
       return s;
     }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
@@ -1026,9 +1027,9 @@ public:
     // send_multiple_buffer_sequence...
     std::size_t sent_buffers = 0;
     typename MultipleBufferSequence::const_iterator iterator = 
-        mutiple_buffer_sequence.begin();
+        multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::const_iterator end = 
-        mutiple_buffer_sequence.end();
+        multiple_buffer_sequence.end();
     while (iterator != end)
     {
       const typename MultipleBufferSequence::value_type&
@@ -1036,13 +1037,13 @@ public:
       const typename MultipleBufferSequence::buffer_sequence_type&
           buffer_sequence = multiple_buffer_sequence_operation.
           buffer_sequence();
-      const typename MultipleBufferSequence::endpoint& endpoint = 
+      const typename MultipleBufferSequence::endpoint_type& endpoint = 
           multiple_buffer_sequence_operation.endpoint();
       asio::error_code ec;
       std::size_t bytes_transferred = send_to(buffer_sequence, endpoint, 0, ec);
       multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
           ec);
-      asio::detail::throw_error(ec, "send_mutiple_buffer_sequence_to");
+      asio::detail::throw_error(ec, "send_multiple_buffer_sequence_to");
       if (bytes_transferred == 0)
       {
         break;
@@ -1086,8 +1087,8 @@ public:
    * The function call will block until the data has been sent successfully or
    * an error occurs.
    *
-   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
-   * socket. The destination are also paired with data buffers.
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. The destination remote endpoint are also paired with data buffers.
    *
    * @param flags Flags specifying how the send call is to be made.
    *
@@ -1096,19 +1097,19 @@ public:
    * @throws asio::system_error Thrown on failure.
    */
   template <typename MultipleBufferSequence>
-  std::size_t send_mutiple_buffer_sequence_to(
-      const MultipleBufferSequence& mutiple_buffer_sequence,
+  std::size_t send_multiple_buffer_sequence_to(
+      const MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags)
   {    
-    mutiple_buffer_sequence.throw_if_empty();
+    multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (mutiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.size() > 1)
     {
       asio::error_code ec;
-      std::size_t s = this->impl_.get_service().send_mutiple_buffer_sequence_to(
-          this->impl_.get_implementation(), mutiple_buffer_sequence, destination
-          , flags, ec);
-      asio::detail::throw_error(ec, "send_mutiple_buffer_sequence_to");
+      std::size_t s = this->impl_.get_service().
+          send_multiple_buffer_sequence_to(this->impl_.get_implementation(), 
+          multiple_buffer_sequence, destination, flags, ec);
+      asio::detail::throw_error(ec, "send_multiple_buffer_sequence_to");
       return s;
     }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
@@ -1116,9 +1117,9 @@ public:
     // send_multiple_buffer_sequence...
     std::size_t sent_buffers = 0;
     typename MultipleBufferSequence::const_iterator iterator = 
-        mutiple_buffer_sequence.begin();
+        multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::const_iterator end = 
-        mutiple_buffer_sequence.end();
+        multiple_buffer_sequence.end();
     while (iterator != end)
     {
       const typename MultipleBufferSequence::value_type&
@@ -1126,14 +1127,14 @@ public:
       const typename MultipleBufferSequence::buffer_sequence_type&
           buffer_sequence = multiple_buffer_sequence_operation.
           buffer_sequence();
-      const typename MultipleBufferSequence::endpoint& endpoint = 
+      const typename MultipleBufferSequence::endpoint_type& endpoint = 
           multiple_buffer_sequence_operation.endpoint();
       asio::error_code ec;
       std::size_t bytes_transferred = send_to(buffer_sequence, endpoint, flags,
           ec);
       multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
           ec);
-      asio::detail::throw_error(ec, "send_mutiple_buffer_sequence_to");
+      asio::detail::throw_error(ec, "send_multiple_buffer_sequence_to");
       if (bytes_transferred == 0)
       {
         break;
@@ -1175,8 +1176,8 @@ public:
    * The function call will block until the data has been sent successfully or
    * an error occurs.
    *
-   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
-   * socket. The destination are also paired with data buffers.
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. The destination remote endpoint are also paired with data buffers.
    *
    * @param flags Flags specifying how the send call is to be made.
    *
@@ -1185,26 +1186,26 @@ public:
    * @returns The number of operations completed.
    */
   template <typename MultipleBufferSequence>
-  std::size_t send_mutiple_buffer_sequence_to(
-      const MultipleBufferSequence& mutiple_buffer_sequence,
+  std::size_t send_multiple_buffer_sequence_to(
+      const MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags, asio::error_code& ec)
   {    
-    mutiple_buffer_sequence.throw_if_empty();
+    multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (mutiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.size() > 1)
     {
-      return this->impl_.get_service().send_mutiple_buffer_sequence_to(
-          this->impl_.get_implementation(), mutiple_buffer_sequence, destination
-          , flags, ec);
+      return this->impl_.get_service().send_multiple_buffer_sequence_to(
+          this->impl_.get_implementation(), multiple_buffer_sequence, 
+          destination, flags, ec);
     }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     // Try to send the buffers one by one in case of missing system call for
     // send_multiple_buffer_sequence...
     std::size_t sent_buffers = 0;
     typename MultipleBufferSequence::const_iterator iterator = 
-        mutiple_buffer_sequence.begin();
+        multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::const_iterator end = 
-        mutiple_buffer_sequence.end();
+        multiple_buffer_sequence.end();
     while (iterator != end)
     {
       const typename MultipleBufferSequence::value_type&
@@ -1212,7 +1213,7 @@ public:
       const typename MultipleBufferSequence::buffer_sequence_type&
           buffer_sequence = multiple_buffer_sequence_operation.
           buffer_sequence();
-      const typename MultipleBufferSequence::endpoint& endpoint = 
+      const typename MultipleBufferSequence::endpoint_type& endpoint = 
           multiple_buffer_sequence_operation.endpoint();
       std::size_t bytes_transferred = send_to(buffer_sequence, endpoint, flags,
           ec);
@@ -1309,11 +1310,11 @@ public:
    * remote endpoint. It is an initiating function for an @ref
    * asynchronous_operation, and always returns immediately.
    *
-   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
    * socket. Although the buffers object may be copied as necessary, ownership
    * of the underlying memory blocks is retained by the caller, which must 
    * guarantee that they remain valid until the completion handler is called. 
-   * The destination are also paired with data buffers.
+   * The destination remote endpoint are also paired with data buffers.
    *
    * @param token The @ref completion_token that will be used to produce a
    * completion handler, which will be called when the send completes. Potential
@@ -1351,35 +1352,35 @@ public:
           ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
   ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(WriteMultipleToken,
       void (asio::error_code, std::size_t, std::size_t, std::size_t))
-  async_send_mutiple_buffer_sequence_to(
-      const MultipleBufferSequence& mutiple_buffer_sequence,
+  async_send_multiple_buffer_sequence_to(
+      const MultipleBufferSequence& multiple_buffer_sequence,
       ASIO_MOVE_ARG(WriteMultipleToken) token
         ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
     ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
       async_initiate<WriteMultipleToken,
         void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
-          declval<initiate_async_send_mutiple_buffer_sequence_to>(), token,
-          mutiple_buffer_sequence, socket_base::message_flags(0))))
+          declval<initiate_async_send_multiple_buffer_sequence_to>(), token,
+          multiple_buffer_sequence, socket_base::message_flags(0))))
   {
-    mutiple_buffer_sequence.throw_if_empty();
+    multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (mutiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.size() > 1)
     {
       return async_initiate<WriteMultipleToken,
         void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
-          initiate_async_send_mutiple_buffer_sequence_to(this), token, buffers,
+          initiate_async_send_multiple_buffer_sequence_to(this), token, buffers,
           socket_base::message_flags(0));
     }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     // Try to send the buffers one by one in case of missing system call for
     // send_multiple_buffer_sequence...
     typename MultipleBufferSequence::const_iterator iterator = 
-        mutiple_buffer_sequence.begin();
+        multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::const_iterator end = 
-        mutiple_buffer_sequence.end();
+        multiple_buffer_sequence.end();
     std::size_t multiple_buffer_sequence_operation_index = 0;
     std::size_t multiple_buffer_sequence_operation_count = 
-        mutiple_buffer_sequence.size();
+        multiple_buffer_sequence.size();
     while (iterator != end)
     {
       const typename MultipleBufferSequence::value_type&
@@ -1387,7 +1388,7 @@ public:
       const typename MultipleBufferSequence::buffer_sequence_type&
           buffer_sequence = multiple_buffer_sequence_operation.
           buffer_sequence();
-      const typename MultipleBufferSequence::endpoint& endpoint = 
+      const typename MultipleBufferSequence::endpoint_type& endpoint = 
           multiple_buffer_sequence_operation.endpoint();
       auto composed_token = [ASIO_MOVE_ARG(WriteMultipleToken) token, 
           &multiple_buffer_sequence_operation, 
@@ -1476,11 +1477,11 @@ public:
    * remote endpoint. It is an initiating function for an @ref
    * asynchronous_operation, and always returns immediately.
    *
-   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
    * socket. Although the buffers object may be copied as necessary, ownership
    * of the underlying memory blocks is retained by the caller, which must 
    * guarantee that they remain valid until the completion handler is called. 
-   * The destination are also paired with data buffers.
+   * The destination remote endpoint are also paired with data buffers.
    *
    * @param flags Flags specifying how the send call is to be made.
    *
@@ -1520,36 +1521,36 @@ public:
           ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
   ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(WriteMultipleToken,
       void (asio::error_code, std::size_t, std::size_t, std::size_t))
-  async_send_mutiple_buffer_sequence_to(
-      const MultipleBufferSequence& mutiple_buffer_sequence,
+  async_send_multiple_buffer_sequence_to(
+      const MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags,
       ASIO_MOVE_ARG(WriteMultipleToken) token
         ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
     ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
       async_initiate<WriteMultipleToken,
         void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
-          declval<initiate_async_send_mutiple_buffer_sequence_to>(), token,
-          mutiple_buffer_sequence, flags)))
+          declval<initiate_async_send_multiple_buffer_sequence_to>(), token,
+          multiple_buffer_sequence, flags)))
   {
-    mutiple_buffer_sequence.throw_if_empty();
+    multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (mutiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.size() > 1)
     {
       return async_initiate<WriteMultipleToken,
         void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
-          initiate_async_send_mutiple_buffer_sequence_to(this), token, buffers,
+          initiate_async_send_multiple_buffer_sequence_to(this), token, buffers,
           flags);
     }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     // Try to send the buffers one by one in case of missing system call for
     // send_multiple_buffer_sequence...
     typename MultipleBufferSequence::const_iterator iterator = 
-        mutiple_buffer_sequence.begin();
+        multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::const_iterator end = 
-        mutiple_buffer_sequence.end();
+        multiple_buffer_sequence.end();
     std::size_t multiple_buffer_sequence_operation_index = 0;
     std::size_t multiple_buffer_sequence_operation_count = 
-        mutiple_buffer_sequence.size();
+        multiple_buffer_sequence.size();
     while (iterator != end)
     {
       const typename MultipleBufferSequence::value_type&
@@ -1557,7 +1558,7 @@ public:
       const typename MultipleBufferSequence::buffer_sequence_type&
           buffer_sequence = multiple_buffer_sequence_operation.
           buffer_sequence();
-      const typename MultipleBufferSequence::endpoint& endpoint = 
+      const typename MultipleBufferSequence::endpoint_type& endpoint = 
           multiple_buffer_sequence_operation.endpoint();
       auto composed_token = [ASIO_MOVE_ARG(WriteMultipleToken) token, 
           &multiple_buffer_sequence_operation, 
@@ -1615,7 +1616,7 @@ public:
    * call will block until data has been received successfully or an error
    * occurs.
    *
-   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
    * socket.
    *
    * @returns The number of operations completed.
@@ -1627,24 +1628,25 @@ public:
    * socket.
    */
   template <typename MultipleBufferSequence>
-  std::size_t receive_mutiple_buffer_sequence(
-      const MultipleBufferSequence& mutiple_buffer_sequence)
+  std::size_t receive_multiple_buffer_sequence(
+      const MultipleBufferSequence& multiple_buffer_sequence)
   {
-    mutiple_buffer_sequence.throw_if_empty();
+    multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (mutiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.size() > 1)
     {
       asio::error_code ec;
-      std::size_t s = this->impl_.get_service().receive_mutiple_buffer_sequence(
-          this->impl_.get_implementation(), mutiple_buffer_sequence, 0, ec);
-      asio::detail::throw_error(ec, "receive_mutiple_buffer_sequence");
+      std::size_t s = this->impl_.get_service().
+          receive_multiple_buffer_sequence(this->impl_.get_implementation(), 
+          multiple_buffer_sequence, 0, ec);
+      asio::detail::throw_error(ec, "receive_multiple_buffer_sequence");
       return s;
     }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     // Try to receive only the first buffer in case of missing system call for
     // receive_multiple_buffer_sequence...
     const typename MultipleBufferSequence::value_type&
-        multiple_buffer_sequence_operation = mutiple_buffer_sequence.front();
+        multiple_buffer_sequence_operation = multiple_buffer_sequence.front();
     const typename MultipleBufferSequence::buffer_sequence_type&
         buffer_sequence = multiple_buffer_sequence_operation.
         buffer_sequence();
@@ -1652,7 +1654,7 @@ public:
     std::size_t bytes_transferred = receive(buffer_sequence, 0, ec);
     multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
         ec);
-    asio::detail::throw_error(ec, "receive_mutiple_buffer_sequence");
+    asio::detail::throw_error(ec, "receive_multiple_buffer_sequence");
     if (bytes_transferred == 0)
     {
       return 0;
@@ -1695,7 +1697,7 @@ public:
    * call will block until data has been received successfully or an error
    * occurs.
    *
-   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
    * socket.
    *
    * @param flags Flags specifying how the receive call is to be made.
@@ -1709,25 +1711,26 @@ public:
    * socket.
    */
   template <typename MultipleBufferSequence>
-  std::size_t receive_mutiple_buffer_sequence(
-      const MultipleBufferSequence& mutiple_buffer_sequence,
+  std::size_t receive_multiple_buffer_sequence(
+      const MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags)
   {
-    mutiple_buffer_sequence.throw_if_empty();
+    multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (mutiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.size() > 1)
     {
       asio::error_code ec;
-      std::size_t s = this->impl_.get_service().receive_mutiple_buffer_sequence(
-          this->impl_.get_implementation(), mutiple_buffer_sequence, flags, ec);
-      asio::detail::throw_error(ec, "receive_mutiple_buffer_sequence");
+      std::size_t s = this->impl_.get_service().
+          receive_multiple_buffer_sequence(this->impl_.get_implementation(), 
+          multiple_buffer_sequence, flags, ec);
+      asio::detail::throw_error(ec, "receive_multiple_buffer_sequence");
       return s;
     }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     // Try to receive only the first buffer in case of missing system call for
     // receive_multiple_buffer_sequence...
     const typename MultipleBufferSequence::value_type&
-        multiple_buffer_sequence_operation = mutiple_buffer_sequence.front();
+        multiple_buffer_sequence_operation = multiple_buffer_sequence.front();
     const typename MultipleBufferSequence::buffer_sequence_type&
         buffer_sequence = multiple_buffer_sequence_operation.
         buffer_sequence();
@@ -1735,7 +1738,7 @@ public:
     std::size_t bytes_transferred = receive(buffer_sequence, flags, ec);
     multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
         ec);
-    asio::detail::throw_error(ec, "receive_mutiple_buffer_sequence");
+    asio::detail::throw_error(ec, "receive_multiple_buffer_sequence");
     if (bytes_transferred == 0)
     {
       return 0;
@@ -1775,7 +1778,7 @@ public:
    * call will block until data has been received successfully or an error
    * occurs.
    *
-   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
    * socket.
    *
    * @param flags Flags specifying how the receive call is to be made.
@@ -1789,22 +1792,23 @@ public:
    * socket.
    */
   template <typename MultipleBufferSequence>
-  std::size_t receive_mutiple_buffer_sequence(
-      const MultipleBufferSequence& mutiple_buffer_sequence,
+  std::size_t receive_multiple_buffer_sequence(
+      const MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags, asio::error_code& ec)
   {
-    mutiple_buffer_sequence.throw_if_empty();
+    multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (mutiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.size() > 1)
     {
-      return this->impl_.get_service().receive_mutiple_buffer_sequence(
-          this->impl_.get_implementation(), mutiple_buffer_sequence, flags, ec);
+      return this->impl_.get_service().receive_multiple_buffer_sequence(
+          this->impl_.get_implementation(), multiple_buffer_sequence, flags, 
+          ec);
     }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     // Try to receive only the first buffer in case of missing system call for
     // receive_multiple_buffer_sequence...
     const typename MultipleBufferSequence::value_type&
-        multiple_buffer_sequence_operation = mutiple_buffer_sequence.front();
+        multiple_buffer_sequence_operation = multiple_buffer_sequence.front();
     const typename MultipleBufferSequence::buffer_sequence_type&
         buffer_sequence = multiple_buffer_sequence_operation.
         buffer_sequence();
@@ -1897,6 +1901,95 @@ public:
    * socket. It is an initiating function for an @ref asynchronous_operation,
    * and always returns immediately.
    *
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. Although the buffers object may be copied as necessary, ownership
+   * of the underlying memory blocks is retained by the caller, which must 
+   * guarantee that they remain valid until the completion handler is called.
+   *
+   * @param token The @ref completion_token that will be used to produce a
+   * completion handler, which will be called when the receive completes.
+   * Potential completion tokens include @ref use_future, @ref use_awaitable,
+   * @ref yield_context, or a function object with the correct completion
+   * signature. The function signature of the completion handler must be:
+   * @code void handler(
+   *   const asio::error_code& error, // Result of operation.
+   *   std::size_t current_buffer, // Number of current buffer.
+   *   std::size_t total_buffers, // Number of total buffers.
+   *   std::size_t bytes_transferred // Number of bytes received.
+   * ); @endcode
+   * Regardless of whether the asynchronous operation completes immediately or
+   * not, the completion handler will not be invoked from within this function.
+   * On immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
+   *
+   * @par Completion Signature
+   * @code void(asio::error_code, std::size_t, std::size_t, std::size_t)
+   * @endcode
+   *
+   * @note The async_receive operation can only be used with a connected socket.
+   * Use the async_receive_from function to receive data on an unconnected
+   * datagram socket.
+   *
+   * @par Per-Operation Cancellation
+   * On POSIX or Windows operating systems, this asynchronous operation supports
+   * cancellation for the following asio::cancellation_type values:
+   *
+   * @li @c cancellation_type::terminal
+   *
+   * @li @c cancellation_type::partial
+   *
+   * @li @c cancellation_type::total
+   */
+  template <typename MultipleBufferSequence,
+      ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
+        std::size_t, std::size_t, std::size_t)) ReadMultipleToken
+          ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
+  ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(ReadMultipleToken,
+      void (asio::error_code, std::size_t, std::size_t, std::size_t))
+  async_receive_multiple_buffer_sequence(
+      const MultipleBufferSequence& multiple_buffer_sequence,
+      ASIO_MOVE_ARG(ReadMultipleToken) token
+        ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
+    ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
+      async_initiate<ReadMultipleToken,
+        void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
+          declval<initiate_async_receive_multiple_buffer_sequence>(), token,
+          multiple_buffer_sequence, socket_base::message_flags(0))))
+  {
+    multiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (multiple_buffer_sequence.size() > 1)
+    {
+      return async_initiate<ReadMultipleToken,
+        void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
+          initiate_async_receive_multiple_buffer_sequence(this), token,
+          multiple_buffer_sequence, socket_base::message_flags(0));
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to receive only the first buffer in case of missing system call for
+    // receive_multiple_buffer_sequence...
+    const typename MultipleBufferSequence::value_type&
+        multiple_buffer_sequence_operation = multiple_buffer_sequence.front();
+    const typename MultipleBufferSequence::buffer_sequence_type&
+        buffer_sequence = multiple_buffer_sequence_operation.
+        buffer_sequence();
+    auto composed_token = [ASIO_MOVE_ARG(ReadMultipleToken) token, 
+        &multiple_buffer_sequence_operation](asio::error_code ec, 
+          std::size_t bytes_transferred) mutable
+    {
+      multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+          ec);
+      token(ec, 0, 1, bytes_transferred);
+    };
+    async_receive(buffer_sequence, composed_token);
+  }
+
+  /// Start an asynchronous receive on a connected socket.
+  /**
+   * This function is used to asynchronously receive data from the datagram
+   * socket. It is an initiating function for an @ref asynchronous_operation,
+   * and always returns immediately.
+   *
    * @param buffers One or more buffers into which the data will be received.
    * Although the buffers object may be copied as necessary, ownership of the
    * underlying memory blocks is retained by the caller, which must guarantee
@@ -1955,6 +2048,98 @@ public:
         initiate_async_receive(this), token, buffers, flags);
   }
 
+  /// Start an asynchronous receive on a connected socket.
+  /**
+   * This function is used to asynchronously receive data from the datagram
+   * socket. It is an initiating function for an @ref asynchronous_operation,
+   * and always returns immediately.
+   *
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. Although the buffers object may be copied as necessary, ownership
+   * of the underlying memory blocks is retained by the caller, which must 
+   * guarantee that they remain valid until the completion handler is called.
+   *
+   * @param flags Flags specifying how the receive call is to be made.
+   *
+   * @param token The @ref completion_token that will be used to produce a
+   * completion handler, which will be called when the receive completes.
+   * Potential completion tokens include @ref use_future, @ref use_awaitable,
+   * @ref yield_context, or a function object with the correct completion
+   * signature. The function signature of the completion handler must be:
+   * @code void handler(
+   *   const asio::error_code& error, // Result of operation.
+   *   std::size_t current_buffer, // Number of current buffer.
+   *   std::size_t total_buffers, // Number of total buffers.
+   *   std::size_t bytes_transferred // Number of bytes received.
+   * ); @endcode
+   * Regardless of whether the asynchronous operation completes immediately or
+   * not, the completion handler will not be invoked from within this function.
+   * On immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
+   *
+   * @par Completion Signature
+   * @code void(asio::error_code, std::size_t, std::size_t, std::size_t)
+   * @endcode
+   *
+   * @note The async_receive operation can only be used with a connected socket.
+   * Use the async_receive_from function to receive data on an unconnected
+   * datagram socket.
+   *
+   * @par Per-Operation Cancellation
+   * On POSIX or Windows operating systems, this asynchronous operation supports
+   * cancellation for the following asio::cancellation_type values:
+   *
+   * @li @c cancellation_type::terminal
+   *
+   * @li @c cancellation_type::partial
+   *
+   * @li @c cancellation_type::total
+   */
+  template <typename MultipleBufferSequence,
+      ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
+        std::size_t, std::size_t, std::size_t)) ReadMultipleToken
+          ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
+  ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(ReadMultipleToken,
+      void (asio::error_code, std::size_t, std::size_t, std::size_t))
+  async_receive_multiple_buffer_sequence(
+      const MultipleBufferSequence& multiple_buffer_sequence,
+      socket_base::message_flags flags,
+      ASIO_MOVE_ARG(ReadMultipleToken) token
+        ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
+    ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
+      async_initiate<ReadMultipleToken,
+        void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
+          declval<initiate_async_receive_multiple_buffer_sequence>(), token,
+          multiple_buffer_sequence, flags)))
+  {
+    multiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (multiple_buffer_sequence.size() > 1)
+    {
+      return async_initiate<ReadMultipleToken,
+        void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
+          initiate_async_receive_multiple_buffer_sequence(this), token,
+          multiple_buffer_sequence, flags);
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to receive only the first buffer in case of missing system call for
+    // receive_multiple_buffer_sequence...
+    const typename MultipleBufferSequence::value_type&
+        multiple_buffer_sequence_operation = multiple_buffer_sequence.front();
+    const typename MultipleBufferSequence::buffer_sequence_type&
+        buffer_sequence = multiple_buffer_sequence_operation.
+        buffer_sequence();
+    auto composed_token = [ASIO_MOVE_ARG(ReadMultipleToken) token, 
+        &multiple_buffer_sequence_operation](asio::error_code ec, 
+          std::size_t bytes_transferred) mutable
+    {
+      multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+          ec);
+      token(ec, 0, 1, bytes_transferred);
+    };
+    async_receive(buffer_sequence, flags, composed_token);
+  }
+
   /// Receive a datagram with the endpoint of the sender.
   /**
    * This function is used to receive a datagram. The function call will block
@@ -1997,44 +2182,44 @@ public:
    * This function is used to receive a datagram. The function call will block
    * until data has been received successfully or an error occurs.
    *
-   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
-   * socket. The destination are also paired with data buffers.
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. The sender endpoint are also paired with data buffers.
    *
    * @returns The number of bytes received.
    *
    * @throws asio::system_error Thrown on failure.
    */
   template <typename MultipleBufferSequence>
-  std::size_t receive_mutiple_buffer_sequence_from(
-      const MultipleBufferSequence& mutiple_buffer_sequence)
+  std::size_t receive_multiple_buffer_sequence_from(
+      const MultipleBufferSequence& multiple_buffer_sequence)
   {
-    mutiple_buffer_sequence.throw_if_empty();
+    multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (mutiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.size() > 1)
     {
       asio::error_code ec;
       std::size_t s = this->impl_.get_service().
-        receive_mutiple_buffer_sequence_from(
-          this->impl_.get_implementation(), mutiple_buffer_sequence, 0, ec);
-      asio::detail::throw_error(ec, "receive_mutiple_buffer_sequence_from");
+          receive_multiple_buffer_sequence_from(
+          this->impl_.get_implementation(), multiple_buffer_sequence, 0, ec);
+      asio::detail::throw_error(ec, "receive_multiple_buffer_sequence_from");
       return s;
     }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     // Try to receive only the first buffer in case of missing system call for
     // receive_multiple_buffer_sequence...
     const typename MultipleBufferSequence::value_type&
-        multiple_buffer_sequence_operation = mutiple_buffer_sequence.front();
+        multiple_buffer_sequence_operation = multiple_buffer_sequence.front();
     const typename MultipleBufferSequence::buffer_sequence_type&
         buffer_sequence = multiple_buffer_sequence_operation.
         buffer_sequence();
-    const typename MultipleBufferSequence::endpoint& endpoint = 
+    const typename MultipleBufferSequence::endpoint_type& endpoint = 
         multiple_buffer_sequence_operation.endpoint();
     asio::error_code ec;
     std::size_t bytes_transferred = receive_from(buffer_sequence, endpoint, 0, 
         ec);
     multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
         ec);
-    asio::detail::throw_error(ec, "receive_mutiple_buffer_sequence_from");
+    asio::detail::throw_error(ec, "receive_multiple_buffer_sequence_from");
     if (bytes_transferred == 0)
     {
       return 0;
@@ -2074,8 +2259,8 @@ public:
    * This function is used to receive a datagram. The function call will block
    * until data has been received successfully or an error occurs.
    *
-   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
-   * socket. The destination are also paired with data buffers.
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. The sender endpoint are also paired with data buffers.
    *
    * @param flags Flags specifying how the receive call is to be made.
    *
@@ -2084,37 +2269,38 @@ public:
    * @throws asio::system_error Thrown on failure.
    */
   template <typename MultipleBufferSequence>
-  std::size_t receive_mutiple_buffer_sequence_from(
-      const MultipleBufferSequence& mutiple_buffer_sequence,
+  std::size_t receive_multiple_buffer_sequence_from(
+      const MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags)
   {
-    mutiple_buffer_sequence.throw_if_empty();
+    multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (mutiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.size() > 1)
     {
       asio::error_code ec;
       std::size_t s = this->impl_.get_service().
-        receive_mutiple_buffer_sequence_from(
-          this->impl_.get_implementation(), mutiple_buffer_sequence, flags, ec);
-      asio::detail::throw_error(ec, "receive_mutiple_buffer_sequence_from");
+          receive_multiple_buffer_sequence_from(
+          this->impl_.get_implementation(), multiple_buffer_sequence, flags, 
+          ec);
+      asio::detail::throw_error(ec, "receive_multiple_buffer_sequence_from");
       return s;
     }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     // Try to receive only the first buffer in case of missing system call for
     // receive_multiple_buffer_sequence...
     const typename MultipleBufferSequence::value_type&
-        multiple_buffer_sequence_operation = mutiple_buffer_sequence.front();
+        multiple_buffer_sequence_operation = multiple_buffer_sequence.front();
     const typename MultipleBufferSequence::buffer_sequence_type&
         buffer_sequence = multiple_buffer_sequence_operation.
         buffer_sequence();
-    const typename MultipleBufferSequence::endpoint& endpoint = 
+    const typename MultipleBufferSequence::endpoint_type& endpoint = 
         multiple_buffer_sequence_operation.endpoint();
     asio::error_code ec;
     std::size_t bytes_transferred = receive_from(buffer_sequence, endpoint,
         flags, ec);
     multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
         ec);
-    asio::detail::throw_error(ec, "receive_mutiple_buffer_sequence_from");
+    asio::detail::throw_error(ec, "receive_multiple_buffer_sequence_from");
     if (bytes_transferred == 0)
     {
       return 0;
@@ -2152,8 +2338,8 @@ public:
    * This function is used to receive a datagram. The function call will block
    * until data has been received successfully or an error occurs.
    *
-   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
-   * socket. The destination are also paired with data buffers.
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. The sender endpoint are also paired with data buffers.
    *
    * @param flags Flags specifying how the receive call is to be made.
    *
@@ -2162,26 +2348,27 @@ public:
    * @returns The number of bytes received.
    */
   template <typename MultipleBufferSequence>
-  std::size_t receive_mutiple_buffer_sequence_from(
-      const MultipleBufferSequence& mutiple_buffer_sequence,
+  std::size_t receive_multiple_buffer_sequence_from(
+      const MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags, asio::error_code& ec)
   {
-    mutiple_buffer_sequence.throw_if_empty();
+    multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (mutiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.size() > 1)
     {
-      return this->impl_.get_service().receive_mutiple_buffer_sequence_from(
-          this->impl_.get_implementation(), mutiple_buffer_sequence, flags, ec);
+      return this->impl_.get_service().receive_multiple_buffer_sequence_from(
+          this->impl_.get_implementation(), multiple_buffer_sequence, flags, 
+          ec);
     }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     // Try to receive only the first buffer in case of missing system call for
     // receive_multiple_buffer_sequence...
     const typename MultipleBufferSequence::value_type&
-        multiple_buffer_sequence_operation = mutiple_buffer_sequence.front();
+        multiple_buffer_sequence_operation = multiple_buffer_sequence.front();
     const typename MultipleBufferSequence::buffer_sequence_type&
         buffer_sequence = multiple_buffer_sequence_operation.
         buffer_sequence();
-    const typename MultipleBufferSequence::endpoint& endpoint = 
+    const typename MultipleBufferSequence::endpoint_type& endpoint = 
         multiple_buffer_sequence_operation.endpoint();
     std::size_t bytes_transferred = receive_from(buffer_sequence, endpoint,
         flags, ec);
@@ -2274,6 +2461,94 @@ public:
    * initiating function for an @ref asynchronous_operation, and always returns
    * immediately.
    *
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. Although the buffers object may be copied as necessary, ownership
+   * of the underlying memory blocks is retained by the caller, which must 
+   * guarantee that they remain valid until the completion handler is called. 
+   * The sender endpoint are also paired with data buffers.
+   *
+   * @param token The @ref completion_token that will be used to produce a
+   * completion handler, which will be called when the receive completes.
+   * Potential completion tokens include @ref use_future, @ref use_awaitable,
+   * @ref yield_context, or a function object with the correct completion
+   * signature. The function signature of the completion handler must be:
+   * @code void handler(
+   *   const asio::error_code& error, // Result of operation.
+   *   std::size_t current_buffer, // Number of current buffer.
+   *   std::size_t total_buffers, // Number of total buffers.
+   *   std::size_t bytes_transferred // Number of bytes received.
+   * ); @endcode
+   * Regardless of whether the asynchronous operation completes immediately or
+   * not, the completion handler will not be invoked from within this function.
+   * On immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
+   *
+   * @par Completion Signature
+   * @code void(asio::error_code, std::size_t, std::size_t, std::size_t)
+   * @endcode
+   *
+   * @par Per-Operation Cancellation
+   * On POSIX or Windows operating systems, this asynchronous operation supports
+   * cancellation for the following asio::cancellation_type values:
+   *
+   * @li @c cancellation_type::terminal
+   *
+   * @li @c cancellation_type::partial
+   *
+   * @li @c cancellation_type::total
+   */
+  template <typename MultipleBufferSequence,
+      ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
+        std::size_t, std::size_t, std::size_t)) ReadMultipleToken
+          ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
+  ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(ReadMultipleToken,
+      void (asio::error_code, std::size_t, std::size_t, std::size_t))
+  async_receive_multiple_buffer_sequence_from(
+      const MultipleBufferSequence& multiple_buffer_sequence,
+      ASIO_MOVE_ARG(ReadMultipleToken) token
+        ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
+    ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
+      async_initiate<ReadMultipleToken,
+        void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
+          declval<initiate_async_receive_multiple_buffer_sequence_from>(), token,
+          multiple_buffer_sequence, socket_base::message_flags(0))))
+  {
+    multiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (multiple_buffer_sequence.size() > 1)
+    {
+      return async_initiate<ReadMultipleToken,
+        void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
+          initiate_async_receive_multiple_buffer_sequence_from(this), token, 
+          multiple_buffer_sequence, socket_base::message_flags(0));
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to receive only the first buffer in case of missing system call for
+    // receive_multiple_buffer_sequence...
+    const typename MultipleBufferSequence::value_type&
+        multiple_buffer_sequence_operation = multiple_buffer_sequence.front();
+    const typename MultipleBufferSequence::buffer_sequence_type&
+        buffer_sequence = multiple_buffer_sequence_operation.
+        buffer_sequence();
+    const typename MultipleBufferSequence::endpoint_type& endpoint = 
+        multiple_buffer_sequence_operation.endpoint();
+    auto composed_token = [ASIO_MOVE_ARG(ReadMultipleToken) token, 
+        &multiple_buffer_sequence_operation](asio::error_code ec, 
+          std::size_t bytes_transferred) mutable
+    {
+      multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+          ec);
+      token(ec, 0, 1, bytes_transferred);
+    };
+    async_receive_from(buffer_sequence, endpoint, composed_token);
+  }
+
+  /// Start an asynchronous receive.
+  /**
+   * This function is used to asynchronously receive a datagram. It is an
+   * initiating function for an @ref asynchronous_operation, and always returns
+   * immediately.
+   *
    * @param buffers One or more buffers into which the data will be received.
    * Although the buffers object may be copied as necessary, ownership of the
    * underlying memory blocks is retained by the caller, which must guarantee
@@ -2333,6 +2608,97 @@ public:
       void (asio::error_code, std::size_t)>(
         initiate_async_receive_from(this), token,
         buffers, &sender_endpoint, flags);
+  }
+
+  /// Start an asynchronous receive.
+  /**
+   * This function is used to asynchronously receive a datagram. It is an
+   * initiating function for an @ref asynchronous_operation, and always returns
+   * immediately.
+   *
+   * @param multiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. Although the buffers object may be copied as necessary, ownership
+   * of the underlying memory blocks is retained by the caller, which must 
+   * guarantee that they remain valid until the completion handler is called. 
+   * The sender endpoint are also paired with data buffers.
+   *
+   * @param flags Flags specifying how the receive call is to be made.
+   *
+   * @param token The @ref completion_token that will be used to produce a
+   * completion handler, which will be called when the receive completes.
+   * Potential completion tokens include @ref use_future, @ref use_awaitable,
+   * @ref yield_context, or a function object with the correct completion
+   * signature. The function signature of the completion handler must be:
+   * @code void handler(
+   *   const asio::error_code& error, // Result of operation.
+   *   std::size_t current_buffer, // Number of current buffer.
+   *   std::size_t total_buffers, // Number of total buffers.
+   *   std::size_t bytes_transferred // Number of bytes received.
+   * ); @endcode
+   * Regardless of whether the asynchronous operation completes immediately or
+   * not, the completion handler will not be invoked from within this function.
+   * On immediate completion, invocation of the handler will be performed in a
+   * manner equivalent to using asio::post().
+   *
+   * @par Completion Signature
+   * @code void(asio::error_code, std::size_t, std::size_t, std::size_t)
+   * @endcode
+   *
+   * @par Per-Operation Cancellation
+   * On POSIX or Windows operating systems, this asynchronous operation supports
+   * cancellation for the following asio::cancellation_type values:
+   *
+   * @li @c cancellation_type::terminal
+   *
+   * @li @c cancellation_type::partial
+   *
+   * @li @c cancellation_type::total
+   */
+  template <typename MultipleBufferSequence,
+      ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
+        std::size_t, std::size_t, std::size_t)) ReadMultipleToken
+          ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
+  ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(ReadMultipleToken,
+      void (asio::error_code, std::size_t, std::size_t, std::size_t))
+  async_receive_multiple_buffer_sequence_from(
+      const MultipleBufferSequence& multiple_buffer_sequence,
+      socket_base::message_flags flags,
+      ASIO_MOVE_ARG(ReadMultipleToken) token
+        ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
+    ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
+      async_initiate<ReadMultipleToken,
+        void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
+          declval<initiate_async_receive_multiple_buffer_sequence_from>(), token,
+          multiple_buffer_sequence, flags)))
+  {
+    multiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (multiple_buffer_sequence.size() > 1)
+    {
+      return async_initiate<ReadMultipleToken,
+        void (asio::error_code, std::size_t, std::size_t, std::size_t)>(
+          initiate_async_receive_multiple_buffer_sequence_from(this), token, 
+          multiple_buffer_sequence, flags);
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to receive only the first buffer in case of missing system call for
+    // receive_multiple_buffer_sequence...
+    const typename MultipleBufferSequence::value_type&
+        multiple_buffer_sequence_operation = multiple_buffer_sequence.front();
+    const typename MultipleBufferSequence::buffer_sequence_type&
+        buffer_sequence = multiple_buffer_sequence_operation.
+        buffer_sequence();
+    const typename MultipleBufferSequence::endpoint_type& endpoint = 
+        multiple_buffer_sequence_operation.endpoint();
+    auto composed_token = [ASIO_MOVE_ARG(ReadMultipleToken) token, 
+        &multiple_buffer_sequence_operation](asio::error_code ec, 
+          std::size_t bytes_transferred) mutable
+    {
+      multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+          ec);
+      token(ec, 0, 1, bytes_transferred);
+    };
+    async_receive_from(buffer_sequence, endpoint, flags. composed_token);
   }
 
 private:
