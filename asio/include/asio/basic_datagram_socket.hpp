@@ -1183,8 +1183,6 @@ public:
    * @param ec Set to indicate what error occurred, if any.
    *
    * @returns The number of operations completed.
-   *
-   * @throws asio::system_error Thrown on failure.
    */
   template <typename MultipleBufferSequence>
   std::size_t send_mutiple_buffer_sequence_to(
@@ -1617,6 +1615,57 @@ public:
    * call will block until data has been received successfully or an error
    * occurs.
    *
+   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket.
+   *
+   * @returns The number of operations completed.
+   *
+   * @throws asio::system_error Thrown on failure.
+   *
+   * @note The receive operation can only be used with a connected socket. Use
+   * the receive_from function to receive data on an unconnected datagram
+   * socket.
+   */
+  template <typename MultipleBufferSequence>
+  std::size_t receive_mutiple_buffer_sequence(
+      const MultipleBufferSequence& mutiple_buffer_sequence)
+  {
+    mutiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (mutiple_buffer_sequence.size() > 1)
+    {
+      asio::error_code ec;
+      std::size_t s = this->impl_.get_service().receive_mutiple_buffer_sequence(
+          this->impl_.get_implementation(), mutiple_buffer_sequence, 0, ec);
+      asio::detail::throw_error(ec, "receive_mutiple_buffer_sequence");
+      return s;
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to receive only the first buffer in case of missing system call for
+    // receive_multiple_buffer_sequence...
+    const typename MultipleBufferSequence::value_type&
+        multiple_buffer_sequence_operation = mutiple_buffer_sequence.front();
+    const typename MultipleBufferSequence::buffer_sequence_type&
+        buffer_sequence = multiple_buffer_sequence_operation.
+        buffer_sequence();
+    asio::error_code ec;
+    std::size_t bytes_transferred = receive(buffer_sequence, 0, ec);
+    multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+        ec);
+    asio::detail::throw_error(ec, "receive_mutiple_buffer_sequence");
+    if (bytes_transferred == 0)
+    {
+      return 0;
+    }
+    return 1;
+  }
+
+  /// Receive some data on a connected socket.
+  /**
+   * This function is used to receive data on the datagram socket. The function
+   * call will block until data has been received successfully or an error
+   * occurs.
+   *
    * @param buffers One or more buffers into which the data will be received.
    *
    * @param flags Flags specifying how the receive call is to be made.
@@ -1646,6 +1695,60 @@ public:
    * call will block until data has been received successfully or an error
    * occurs.
    *
+   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket.
+   *
+   * @param flags Flags specifying how the receive call is to be made.
+   *
+   * @returns The number of operations completed.
+   *
+   * @throws asio::system_error Thrown on failure.
+   *
+   * @note The receive operation can only be used with a connected socket. Use
+   * the receive_from function to receive data on an unconnected datagram
+   * socket.
+   */
+  template <typename MultipleBufferSequence>
+  std::size_t receive_mutiple_buffer_sequence(
+      const MultipleBufferSequence& mutiple_buffer_sequence,
+      socket_base::message_flags flags)
+  {
+    mutiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (mutiple_buffer_sequence.size() > 1)
+    {
+      asio::error_code ec;
+      std::size_t s = this->impl_.get_service().receive_mutiple_buffer_sequence(
+          this->impl_.get_implementation(), mutiple_buffer_sequence, flags, ec);
+      asio::detail::throw_error(ec, "receive_mutiple_buffer_sequence");
+      return s;
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to receive only the first buffer in case of missing system call for
+    // receive_multiple_buffer_sequence...
+    const typename MultipleBufferSequence::value_type&
+        multiple_buffer_sequence_operation = mutiple_buffer_sequence.front();
+    const typename MultipleBufferSequence::buffer_sequence_type&
+        buffer_sequence = multiple_buffer_sequence_operation.
+        buffer_sequence();
+    asio::error_code ec;
+    std::size_t bytes_transferred = receive(buffer_sequence, flags, ec);
+    multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+        ec);
+    asio::detail::throw_error(ec, "receive_mutiple_buffer_sequence");
+    if (bytes_transferred == 0)
+    {
+      return 0;
+    }
+    return 1;
+  }
+
+  /// Receive some data on a connected socket.
+  /**
+   * This function is used to receive data on the datagram socket. The function
+   * call will block until data has been received successfully or an error
+   * occurs.
+   *
    * @param buffers One or more buffers into which the data will be received.
    *
    * @param flags Flags specifying how the receive call is to be made.
@@ -1664,6 +1767,55 @@ public:
   {
     return this->impl_.get_service().receive(
         this->impl_.get_implementation(), buffers, flags, ec);
+  }
+
+  /// Receive some data on a connected socket.
+  /**
+   * This function is used to receive data on the datagram socket. The function
+   * call will block until data has been received successfully or an error
+   * occurs.
+   *
+   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket.
+   *
+   * @param flags Flags specifying how the receive call is to be made.
+   *
+   * @param ec Set to indicate what error occurred, if any.
+   *
+   * @returns The number of operations completed.
+   *
+   * @note The receive operation can only be used with a connected socket. Use
+   * the receive_from function to receive data on an unconnected datagram
+   * socket.
+   */
+  template <typename MultipleBufferSequence>
+  std::size_t receive_mutiple_buffer_sequence(
+      const MultipleBufferSequence& mutiple_buffer_sequence,
+      socket_base::message_flags flags, asio::error_code& ec)
+  {
+    mutiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (mutiple_buffer_sequence.size() > 1)
+    {
+      return this->impl_.get_service().receive_mutiple_buffer_sequence(
+          this->impl_.get_implementation(), mutiple_buffer_sequence, flags, ec);
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to receive only the first buffer in case of missing system call for
+    // receive_multiple_buffer_sequence...
+    const typename MultipleBufferSequence::value_type&
+        multiple_buffer_sequence_operation = mutiple_buffer_sequence.front();
+    const typename MultipleBufferSequence::buffer_sequence_type&
+        buffer_sequence = multiple_buffer_sequence_operation.
+        buffer_sequence();
+    std::size_t bytes_transferred = receive(buffer_sequence, flags, ec);
+    multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+        ec);
+    if (bytes_transferred == 0)
+    {
+      return 0;
+    }
+    return 1;
   }
 
   /// Start an asynchronous receive on a connected socket.
@@ -1839,6 +1991,56 @@ public:
     asio::detail::throw_error(ec, "receive_from");
     return s;
   }
+
+  /// Receive a datagram with the endpoint of the sender.
+  /**
+   * This function is used to receive a datagram. The function call will block
+   * until data has been received successfully or an error occurs.
+   *
+   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. The destination are also paired with data buffers.
+   *
+   * @returns The number of bytes received.
+   *
+   * @throws asio::system_error Thrown on failure.
+   */
+  template <typename MultipleBufferSequence>
+  std::size_t receive_mutiple_buffer_sequence_from(
+      const MultipleBufferSequence& mutiple_buffer_sequence)
+  {
+    mutiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (mutiple_buffer_sequence.size() > 1)
+    {
+      asio::error_code ec;
+      std::size_t s = this->impl_.get_service().
+        receive_mutiple_buffer_sequence_from(
+          this->impl_.get_implementation(), mutiple_buffer_sequence, 0, ec);
+      asio::detail::throw_error(ec, "receive_mutiple_buffer_sequence_from");
+      return s;
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to receive only the first buffer in case of missing system call for
+    // receive_multiple_buffer_sequence...
+    const typename MultipleBufferSequence::value_type&
+        multiple_buffer_sequence_operation = mutiple_buffer_sequence.front();
+    const typename MultipleBufferSequence::buffer_sequence_type&
+        buffer_sequence = multiple_buffer_sequence_operation.
+        buffer_sequence();
+    const typename MultipleBufferSequence::endpoint& endpoint = 
+        multiple_buffer_sequence_operation.endpoint();
+    asio::error_code ec;
+    std::size_t bytes_transferred = receive_from(buffer_sequence, endpoint, 0, 
+        ec);
+    multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+        ec);
+    asio::detail::throw_error(ec, "receive_mutiple_buffer_sequence_from");
+    if (bytes_transferred == 0)
+    {
+      return 0;
+    }
+    return 1;
+  }
   
   /// Receive a datagram with the endpoint of the sender.
   /**
@@ -1866,6 +2068,59 @@ public:
     asio::detail::throw_error(ec, "receive_from");
     return s;
   }
+
+  /// Receive a datagram with the endpoint of the sender.
+  /**
+   * This function is used to receive a datagram. The function call will block
+   * until data has been received successfully or an error occurs.
+   *
+   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. The destination are also paired with data buffers.
+   *
+   * @param flags Flags specifying how the receive call is to be made.
+   *
+   * @returns The number of bytes received.
+   *
+   * @throws asio::system_error Thrown on failure.
+   */
+  template <typename MultipleBufferSequence>
+  std::size_t receive_mutiple_buffer_sequence_from(
+      const MultipleBufferSequence& mutiple_buffer_sequence,
+      socket_base::message_flags flags)
+  {
+    mutiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (mutiple_buffer_sequence.size() > 1)
+    {
+      asio::error_code ec;
+      std::size_t s = this->impl_.get_service().
+        receive_mutiple_buffer_sequence_from(
+          this->impl_.get_implementation(), mutiple_buffer_sequence, flags, ec);
+      asio::detail::throw_error(ec, "receive_mutiple_buffer_sequence_from");
+      return s;
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to receive only the first buffer in case of missing system call for
+    // receive_multiple_buffer_sequence...
+    const typename MultipleBufferSequence::value_type&
+        multiple_buffer_sequence_operation = mutiple_buffer_sequence.front();
+    const typename MultipleBufferSequence::buffer_sequence_type&
+        buffer_sequence = multiple_buffer_sequence_operation.
+        buffer_sequence();
+    const typename MultipleBufferSequence::endpoint& endpoint = 
+        multiple_buffer_sequence_operation.endpoint();
+    asio::error_code ec;
+    std::size_t bytes_transferred = receive_from(buffer_sequence, endpoint,
+        flags, ec);
+    multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+        ec);
+    asio::detail::throw_error(ec, "receive_mutiple_buffer_sequence_from");
+    if (bytes_transferred == 0)
+    {
+      return 0;
+    }
+    return 1;
+  }
   
   /// Receive a datagram with the endpoint of the sender.
   /**
@@ -1890,6 +2145,53 @@ public:
   {
     return this->impl_.get_service().receive_from(
         this->impl_.get_implementation(), buffers, sender_endpoint, flags, ec);
+  }
+
+  /// Receive a datagram with the endpoint of the sender.
+  /**
+   * This function is used to receive a datagram. The function call will block
+   * until data has been received successfully or an error occurs.
+   *
+   * @param mutiple_buffer_sequence One ore more data buffers to be sent on the
+   * socket. The destination are also paired with data buffers.
+   *
+   * @param flags Flags specifying how the receive call is to be made.
+   *
+   * @param ec Set to indicate what error occurred, if any.
+   *
+   * @returns The number of bytes received.
+   */
+  template <typename MultipleBufferSequence>
+  std::size_t receive_mutiple_buffer_sequence_from(
+      const MultipleBufferSequence& mutiple_buffer_sequence,
+      socket_base::message_flags flags, asio::error_code& ec)
+  {
+    mutiple_buffer_sequence.throw_if_empty();
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    if (mutiple_buffer_sequence.size() > 1)
+    {
+      return this->impl_.get_service().receive_mutiple_buffer_sequence_from(
+          this->impl_.get_implementation(), mutiple_buffer_sequence, flags, ec);
+    }
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+    // Try to receive only the first buffer in case of missing system call for
+    // receive_multiple_buffer_sequence...
+    const typename MultipleBufferSequence::value_type&
+        multiple_buffer_sequence_operation = mutiple_buffer_sequence.front();
+    const typename MultipleBufferSequence::buffer_sequence_type&
+        buffer_sequence = multiple_buffer_sequence_operation.
+        buffer_sequence();
+    const typename MultipleBufferSequence::endpoint& endpoint = 
+        multiple_buffer_sequence_operation.endpoint();
+    std::size_t bytes_transferred = receive_from(buffer_sequence, endpoint,
+        flags, ec);
+    multiple_buffer_sequence_operation.complete_operation(bytes_transferred, 
+        ec);
+    if (bytes_transferred == 0)
+    {
+      return 0;
+    }
+    return 1;
   }
 
   /// Start an asynchronous receive.
