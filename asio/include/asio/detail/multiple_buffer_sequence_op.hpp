@@ -75,7 +75,12 @@ public:
   {
   }
 
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY)
+public:
+#else //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY)
 private:
+#endif //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY)
+
   multiple_buffer_sequence_op(
       multiple_buffer_sequence_op const& other)
     : buffer_sequence_(other.buffer_sequence_),  
@@ -85,20 +90,6 @@ private:
       error_code_(other.error_code_)
   {
   }
-
-#if defined(ASIO_HAS_MOVE)
-  multiple_buffer_sequence_op(
-      multiple_buffer_sequence_op const&& other)
-    : buffer_sequence_(std::move(other.buffer_sequence_)),
-      buffer_sequence_adapter_(buffer_sequence_),
-      endpoint_(std::move(other.endpoint_)),
-      completed_(std::move(other.completed_)),
-      flags_(std::move(other.flags_)),
-      bytes_transferred_(std::move(other.bytes_transferred_)),
-      error_code_(std::move(other.error_code_))
-  {
-  }
-#endif // defined(ASIO_HAS_MOVE)
 
   multiple_buffer_sequence_op & operator = (
       multiple_buffer_sequence_op const& other)
@@ -114,7 +105,26 @@ private:
     return (*this);
   }
 
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_MOVE)
+public:
+#else //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_MOVE)
+private:
+#endif //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_MOVE)
+
 #if defined(ASIO_HAS_MOVE)
+
+  multiple_buffer_sequence_op(
+      multiple_buffer_sequence_op const&& other)
+    : buffer_sequence_(std::move(other.buffer_sequence_)),
+      buffer_sequence_adapter_(buffer_sequence_),
+      endpoint_(std::move(other.endpoint_)),
+      completed_(std::move(other.completed_)),
+      flags_(std::move(other.flags_)),
+      bytes_transferred_(std::move(other.bytes_transferred_)),
+      error_code_(std::move(other.error_code_))
+  {
+  }
+
   multiple_buffer_sequence_op & operator = (
       multiple_buffer_sequence_op const&& other)
   {
@@ -128,9 +138,10 @@ private:
 
     return (*this);
   }
-#endif // defined(ASIO_HAS_MOVE)
-public:
 
+#endif // defined(ASIO_HAS_MOVE)
+
+public:
   std::size_t count() const
   {
     return buffer_sequence_adapter_.count();

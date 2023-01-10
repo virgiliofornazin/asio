@@ -1696,14 +1696,6 @@
 #   endif // (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 8)
 #  endif // defined(ASIO_HAS_EPOLL)
 # endif // !defined(ASIO_HAS_TIMERFD)
-# if !defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-#  if !defined(ASIO_DISABLE_MULTIPLE_BUFFER_SEQUENCE_IO)
-#   if (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 12)
-#    define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
-#    define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
-#   endif // (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 12)
-#  endif // !defined(ASIO_DISABLE_MULTIPLE_BUFFER_SEQUENCE_IO)
-# endif // !defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 #endif // defined(__linux__)
 
 // Linux: io_uring is used instead of epoll.
@@ -1712,6 +1704,69 @@
 #  define ASIO_HAS_IO_URING_AS_DEFAULT 1
 # endif // !defined(ASIO_HAS_EPOLL) && defined(ASIO_HAS_IO_URING)
 #endif // !defined(ASIO_HAS_IO_URING_AS_DEFAULT)
+
+//
+// ASIO support for sendmmsg/recvmmsg support for operating systems listed below
+//
+// - Linux (with GNUlibc >= 2.12)
+// - FreeBSD 11
+// - NetBSD 7
+// - OpenBSD 7.2
+// - AIX 7.2
+// - QNX 7.0
+//
+#if !defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+# if !defined(ASIO_DISABLE_MULTIPLE_BUFFER_SEQUENCE_IO)
+#  if defined(__linux__)
+#   if (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 12)
+#    define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
+#    define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO UIO_MAXIOV
+#   endif // (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 12)
+#  endif // defined(__linux__)
+#  if defined(__FreeBSD__)
+#   include <sys/param.h>
+#   if defined(__FreeBSD_version) && (__FreeBSD_version >= 1100000)
+#    define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
+#    define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
+#   endif // defined(__FreeBSD_version) && (__FreeBSD_version >= 1100000)
+#  endif // defined(__FreeBSD__)
+#  if defined(__NetBSD__)
+#   include <sys/param.h>
+#   if defined(__NetBSD_Version__) && (__NetBSD_Version__  >= 700000000)
+#    define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
+#    define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
+#   endif // defined(__NetBSD_Version__) && (__NetBSD_Version__  >= 700000000)
+#  endif // defined(__NetBSD__)
+#  if defined(__OpenBSD__)
+#   include <sys/param.h>
+#   if defined(OpenBSD7_2)
+#    define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
+#    define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
+#   endif // defined(OpenBSD7_2)
+#  endif // defined(__OpenBSD__)
+#  if defined(_AIX)
+#   if defined(_AIX72)
+#    define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
+#    define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
+#   endif // defined(_AIX72)
+#  endif // defined(_AIX)
+#  if defined(__QNXNTO__)
+#   if defined(__QNXNTO__) && (__QNXNTO__ >= 700)
+#    define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
+#    define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
+#   endif // defined(__QNXNTO__) && (__QNXNTO__ >= 700)
+#  endif // defined(__QNXNTO__)
+# endif // !defined(ASIO_DISABLE_MULTIPLE_BUFFER_SEQUENCE_IO)
+#endif // !defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+# if !defined(ASIO_DISABLE_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY_MOVE)
+#  define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY 1
+#  if defined(ASIO_HAS_MOVE)
+#   define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_MOVE 1
+#  endif // defined(ASIO_HAS_MOVE)
+# endif // !defined(ASIO_DISABLE_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY_MOVE)
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
 // Mac OS X, FreeBSD, NetBSD, OpenBSD: kqueue.
 #if (defined(__MACH__) && defined(__APPLE__)) \

@@ -61,22 +61,14 @@ public:
         static_cast<reactive_socket_sendmmsg_op_base*>(base));
     
     multiple_buffer_sequence_adapter<MultipleBufferSequence> 
-      bufs(o->multiple_buffer_sequence_);
+      mbufs(o->multiple_buffer_sequence_);
 
     status result = socket_ops::non_blocking_sendmmsg(o->socket_,
-        bufs.native_buffer(), bufs.size(), o->flags_, o->ec_,
+        mbufs.native_buffers(), mbufs.native_buffer_size(), o->flags_, o->ec_,
         o->bytes_transferred_, o->completed_ops_) 
         ? done : not_done;
 
-    // TODO
-    /*
-    if (result == done)
-      if ((o->state_ & socket_ops::stream_oriented) != 0)
-        if (o->bytes_transferred_ < bufs_type::first(o->buffers_).size())
-          result = done_and_exhausted;
-    */
-
-    bufs.complete(result, ec);
+    mbufs.do_complete(o->completed_ops_, o->bytes_transferred_, o->ec_);
 
     ASIO_HANDLER_REACTOR_OPERATION((*o, "non_blocking_sendmmsg",
           o->ec_, o->bytes_transferred_));
@@ -137,8 +129,9 @@ public:
     // to ensure that any owning sub-object remains valid until after we have
     // deallocated the memory here.
     detail::binder4<Handler, asio::error_code, std::size_t, std::size_t, 
-        std::size_t> handler(o->handler_, o->ec_, /* TODO */ 0, /* TODO */ 0, 
-        o->bytes_transferred_);
+        std::size_t> handler(o->handler_, o->ec_,  /* TODO loop */ 0, 
+        o->multiple_buffer_sequence_.size(),
+        /* TODO loop */  o->bytes_transferred_);
     p.h = asio::detail::addressof(handler.handler_);
     p.reset();
 

@@ -279,13 +279,13 @@ public:
       socket_base::message_flags flags, asio::error_code& ec)
   {
     multiple_buffer_sequence_adapter<MultipleBufferSequence> 
-      bufs(multiple_buffer_sequence);
+      mbufs(multiple_buffer_sequence);
 
     size_t result = socket_ops::sync_sendmmsg(impl.socket_, impl.state_,
-        bufs.native_buffer(), bufs.size(), flags,
-        multiple_buffer_sequence.all_empty(), ec);
+        mbufs.native_buffers(), mbufs.native_buffer_size(), flags,
+        ec);
 
-    bufs.complete(result, ec);
+    mbufs.do_complete(result, ec);
 
     return result;
   }
@@ -571,7 +571,7 @@ public:
       const IoExecutor& io_ex)
   {
     return async_receive_multiple_buffer_sequence_with_flags(impl, 
-        multiple_buffer_sequence, flags, handler, ec);
+        multiple_buffer_sequence, flags, handler, io_ex);
   }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
@@ -618,8 +618,8 @@ public:
       const null_buffers& nb, socket_base::message_flags flags,
       Handler& handler, const IoExecutor& io_ex)
   {
-    return async_receive_multiple_buffer_sequence_with_flags(impl, nb, 0,
-        handler, ec);
+    return async_receive_multiple_buffer_sequence_with_flags(impl, nb, flags,
+        handler, io_ex);
   }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
@@ -648,13 +648,13 @@ public:
       socket_base::message_flags flags, asio::error_code& ec)
   {
     multiple_buffer_sequence_adapter<MultipleBufferSequence> 
-      bufs(multiple_buffer_sequence);
+      mbufs(multiple_buffer_sequence);
 
     size_t result = socket_ops::sync_recvmmsg(impl.socket_, impl.state_,
-        bufs.native_buffer(), bufs.size(), flags, 
-        multiple_buffer_sequence.all_empty(), ec);
+        mbufs.native_buffers(), mbufs.native_buffer_size(), flags, 
+        ec);
 
-    bufs.complete(result, ec);
+    mbufs.do_complete(result, ec);
 
     return result;
   }
@@ -738,7 +738,7 @@ public:
   void async_receive_multiple_buffer_sequence_with_flags(
       base_implementation_type& impl,
       MultipleBufferSequence& multiple_buffer_sequence,
-      socket_base::message_flags in_flags, Handler& handler,
+      socket_base::message_flags flags, Handler& handler,
       const IoExecutor& io_ex)
   {
     bool is_continuation =
@@ -753,7 +753,7 @@ public:
     typename op::ptr p = { asio::detail::addressof(handler),
       op::ptr::allocate(handler), 0 };
     p.p = new (p.v) op(success_ec_, impl.socket_,
-        multiple_buffer_sequence, in_flags, handler, io_ex);
+        multiple_buffer_sequence, flags, handler, io_ex);
 
     // Optionally register for per-operation cancellation.
     if (slot.is_connected())
@@ -768,10 +768,10 @@ public:
           "async_receive_multiple_buffer_sequence_with_flags"));
 
     start_op(impl,
-        (in_flags & socket_base::message_out_of_band)
+        (flags & socket_base::message_out_of_band)
           ? reactor::except_op : reactor::read_op,
         p.p, is_continuation,
-        (in_flags & socket_base::message_out_of_band) == 0, false);
+        (flags & socket_base::message_out_of_band) == 0, false);
     p.v = p.p = 0;
   }
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
@@ -822,7 +822,7 @@ public:
   template <typename Handler, typename IoExecutor>
   void async_receive_multiple_buffer_sequence_with_flags(
       base_implementation_type& impl, const null_buffers&, 
-      socket_base::message_flags in_flags, Handler& handler,
+      socket_base::message_flags flags, Handler& handler,
       const IoExecutor& io_ex)
   {
     bool is_continuation =
@@ -850,7 +850,7 @@ public:
           "async_receive_multiple_buffer_sequence_with_flags(null_buffers)"));
 
     start_op(impl,
-        (in_flags & socket_base::message_out_of_band)
+        (flags & socket_base::message_out_of_band)
           ? reactor::except_op : reactor::read_op,
         p.p, is_continuation, false, false);
     p.v = p.p = 0;

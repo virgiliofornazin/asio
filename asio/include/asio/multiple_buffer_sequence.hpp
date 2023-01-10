@@ -19,6 +19,7 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
+#include "asio/detail/array.hpp"
 #include "asio/detail/multiple_buffer_sequence_op.hpp"
 #include "asio/socket_base.hpp"
 #include <stdexcept>
@@ -121,18 +122,16 @@ public:
     push_back(buffer_sequence, endpoint);
   }
 
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY)
+public:
+#else //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY)
 private:
+#endif //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY)
+
   base_multiple_buffer_sequence(base_multiple_buffer_sequence const& other)
     : m_container(other.begin(), other.end())
   {
   }
-  
-#if defined(ASIO_HAS_MOVE)
-  base_multiple_buffer_sequence(base_multiple_buffer_sequence&& other)
-    : m_container(std::move(other))
-  {
-  }
-#endif // defined(ASIO_HAS_MOVE)  
 
   base_multiple_buffer_sequence& operator = (
       base_multiple_buffer_sequence const& other)
@@ -140,24 +139,84 @@ private:
     m_container = other.m_container;
     return (*this);
   }
+
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_MOVE)
+public:
+#else //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_MOVE)
+private:
+#endif //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_MOVE)
   
 #if defined(ASIO_HAS_MOVE)
+
+  base_multiple_buffer_sequence(base_multiple_buffer_sequence&& other)
+    : m_container(std::move(other))
+  {
+  }
+  
   base_multiple_buffer_sequence& operator = (
       base_multiple_buffer_sequence&& other)
   {
     m_container = std::move(other.m_container);
     return (*this);
   }
-#endif // defined(ASIO_HAS_MOVE) 
- public:
 
+#endif // defined(ASIO_HAS_MOVE)
+
+ public:
   virtual ~base_multiple_buffer_sequence() ASIO_NOEXCEPT
   {
+  }
+  
+  size_type count() const ASIO_NOEXCEPT
+  {
+    return m_container.size();
+  }
+  
+  size_type total_size() const ASIO_NOEXCEPT
+  {
+    if (empty())
+    {
+      return 0;
+    }
+
+    size_type result = 0;
+    size_type const op_count = count();
+
+    for (size_t i = 0; i < op_count; ++i)
+    {
+      const_reference buffer_sequence = at(i);
+
+      result += buffer_sequence.total_size();
+    }
+    
+    return result;
+  }
+
+  bool all_empty() const
+  {
+    if (empty())
+    {
+      return true;
+    }
+
+    size_type const op_count = count();
+
+    for (size_t i = 0; i < op_count; ++i)
+    {
+      const_reference buffer_sequence = at(i);
+
+      if (!buffer_sequence.all_empty())
+      {
+        return false;
+      }
+    }
+    
+    return true;
   }
 
   void reset()
   {
-    size_type const op_count = size();
+    size_type const op_count = count();
 
     for (size_t i = 0; i < op_count; ++i)
     {
@@ -165,6 +224,11 @@ private:
 
       buffer_sequence.reset();
     }
+  }
+
+  bool full() const ASIO_NOEXCEPT
+  {
+    return (size() >= max_size());
   }
 
   void throw_if_empty() const
@@ -305,40 +369,13 @@ private:
   {
     std::swap(m_container, other.m_container);
   }
-
-  bool all_empty() const
-  {
-    if (empty())
-    {
-      return true;
-    }
-
-    size_type const op_count = size();
-
-    for (size_t i = 0; i < op_count; ++i)
-    {
-      const_reference buffer_sequence = at(i);
-
-      if (!buffer_sequence.all_empty())
-      {
-        return false;
-      }
-    }
-    
-    return true;
-  }
-
-  bool full() const ASIO_NOEXCEPT
-  {
-    return (size() >= max_size());
-  }
 };
 
 template <typename BufferSequence, typename EndpointType, 
     std::size_t BufferSequenceCount>
 class fixed_size_multiple_buffer_sequence
   : public base_multiple_buffer_sequence<BufferSequence, EndpointType,
-  std::array<detail::multiple_buffer_sequence_op<BufferSequence, EndpointType>, 
+  detail::array<detail::multiple_buffer_sequence_op<BufferSequence, EndpointType>, 
     BufferSequenceCount>>
 {
 public:
@@ -346,7 +383,7 @@ public:
       BufferSequenceCount> this_type;
 
   typedef base_multiple_buffer_sequence<BufferSequence, EndpointType,
-      std::array<detail::multiple_buffer_sequence_op<BufferSequence,
+      detail::array<detail::multiple_buffer_sequence_op<BufferSequence,
       EndpointType>, BufferSequenceCount>> base_type;
 
   typedef typename base_type::buffer_sequence_type buffer_sequence_type;

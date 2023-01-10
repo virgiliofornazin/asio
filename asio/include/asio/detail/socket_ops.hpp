@@ -229,10 +229,10 @@ ASIO_DECL bool non_blocking_recvmsg(socket_type s,
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
 ASIO_DECL signed_size_type recvmmsg(socket_type s, mbufs* bufs,
-    size_t count, int flags, asio::error_code& ec, size_t& completed_ops);
+    size_t count, int flags, asio::error_code& ec);
 
 ASIO_DECL size_t sync_recvmmsg(socket_type s, state_type state, mbufs* bufs, 
-    size_t count, int flags, asio::error_code& ec, size_t& completed_ops);
+    size_t count, int flags, asio::error_code& ec);
 
 #if !defined(ASIO_HAS_IOCP)
 
@@ -306,12 +306,10 @@ ASIO_DECL bool non_blocking_sendto1(socket_type s, const void* data,
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
 ASIO_DECL signed_size_type sendmmsg(socket_type s,
-    mbufs* bufs, size_t count, int flags, asio::error_code& ec,
-    size_t& completed_ops);
+    mbufs* bufs, size_t count, int flags, asio::error_code& ec);
 
 ASIO_DECL size_t sync_sendmmsg(socket_type s, state_type state,
-    mbufs* bufs, size_t count, int flags, asio::error_code& ec,
-    size_t& completed_ops);
+    mbufs* bufs, size_t count, int flags, asio::error_code& ec);
 
 #if !defined(ASIO_HAS_IOCP)
 

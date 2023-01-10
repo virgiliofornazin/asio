@@ -73,53 +73,6 @@ public:
 #endif // defined(__linux__)
 };
 
-/*
-template <typename MultipleBufferSequence>
-struct multiple_buffer_sequence_adapter_native_buffer_container
-{
-  const bool value = false;
-};
-
-template <typename BufferSequence, typename EndpointType, 
-    std::size_t BufferSequenceCount>
-struct multiple_buffer_sequence_adapter_native_buffer_container<
-    fixed_size_multiple_buffer_sequence<BufferSequence, EndpointType,
-      BufferSequenceCount>>
-{
-  const bool value = true;
-
-  typedef std::array<
-      base_multiple_buffer_sequence_adapter::native_multiple_buffer_type,
-      BufferSequenceCount> type;
-
-  typedef typename type::size_type size_type;
-
-  void resize(type&, size_type)
-  {
-  }
-};
-
-template <typename BufferSequence, typename EndpointType, 
-    typename BufferSequenceContainerAllocatorType>
-struct multiple_buffer_sequence_adapter_native_buffer_container<
-    resizeable_multiple_buffer_sequence<BufferSequence, EndpointType,
-      BufferSequenceContainerAllocatorType>>
-{
-  const bool value = true;
-
-  typedef std::vector<
-      base_multiple_buffer_sequence_adapter::native_multiple_buffer_type>
-      type;
-
-  typedef typename type::size_type size_type;
-
-  void resize(type& container, size_type count)
-  {
-    container.resize(count);
-  }
-};
-*/
-
 // Helper class to translate buffers into the native multiple buffer
 // representation.
 template <typename MultipleBufferSequence>
@@ -136,46 +89,56 @@ public:
   typedef typename multiple_buffer_sequence_type::reference reference;
   
 private:
+// TODO: specialize native_multiple_buffer_type in asio::detail::array 
+// for fixed size multiple buffer sequence object
   typedef std::vector<native_multiple_buffer_type>
       native_multiple_buffer_type_container_type;
 
   multiple_buffer_sequence_type& multiple_buffer_sequence_;
+
   native_multiple_buffer_type_container_type
       native_multiple_buffer_type_container_;
-  std::size_t completed_operations_;
 
-private:
-  void do_prepare()
-  {
-    std::size_t const operation_count = multiple_buffer_sequence_.size();
-    native_multiple_buffer_type_container_.resize(operation_count);
-    for (std::size_t i = 0; i < operation_count; ++i)
-    {
-      reference asio_multiple_buffer_sequence = multiple_buffer_sequence_.at(i);
-      native_reference native_multiple_buffer_sequence =
-          native_multiple_buffer_type_container_.at(i);
-      this->do_prepare(asio_multiple_buffer_sequence, 
-          native_multiple_buffer_sequence);
-    }
-  }
+  std::size_t completed_operations_;
+  std::size_t bytes_transferred_;
 
 public:
   explicit multiple_buffer_sequence_adapter(
       multiple_buffer_sequence_type& _multiple_buffer_sequence)
     : multiple_buffer_sequence_(_multiple_buffer_sequence),
-      completed_operations_(0)
+      completed_operations_(0), bytes_transferred_(0)
   {
     do_prepare();
   }
 
-  native_multiple_buffer_type* native_buffer()
+  native_multiple_buffer_type* native_buffers()
   {
     return native_multiple_buffer_type_container_.data();
   }
 
-  std::size_t size() const
+  std::size_t native_buffer_size() const ASIO_NOEXCEPT
   {
     return native_multiple_buffer_type_container_.size();
+  }
+
+  std::size_t count() const ASIO_NOEXCEPT
+  {
+    return multiple_buffer_sequence_.count();
+  }
+
+  std::size_t total_size() const ASIO_NOEXCEPT
+  {
+    return multiple_buffer_sequence_.total_size();
+  }
+
+  bool all_empty() const
+  {
+    return multiple_buffer_sequence_.all_empty();
+  }
+
+  bool full() const ASIO_NOEXCEPT
+  {
+    return multiple_buffer_sequence_.full();
   }
 
   std::size_t completed_operations() const
@@ -183,15 +146,11 @@ public:
     return completed_operations_;
   }
 
-  void do_complete(std::size_t _completed_operations,
-      const asio::error_code& ec)
+  void do_prepare()
   {
-    completed_operations_ = _completed_operations;
-    
-    /*
-    std::size_t const operation_count = multiple_buffer_sequence_.size();
-    native_multiple_buffer_type_container_.resize(operation_count);
-    for (std::size_t i = 0; i < operation_count; ++i)
+    std::size_t const count_op = multiple_buffer_sequence_.size();
+    native_multiple_buffer_type_container_.resize(count_op);
+    for (std::size_t i = 0; i < count_op; ++i)
     {
       reference asio_multiple_buffer_sequence = multiple_buffer_sequence_.at(i);
       native_reference native_multiple_buffer_sequence =
@@ -199,7 +158,41 @@ public:
       this->do_prepare(asio_multiple_buffer_sequence, 
           native_multiple_buffer_sequence);
     }
-    */
+    completed_operations_ = 0;
+    bytes_transferred_ = 0;
+  }
+
+  void do_complete(std::size_t _completed_operations,
+      const asio::error_code& ec)
+  {
+    bytes_transferred_ = 0;
+    completed_operations_ = _completed_operations;
+    std::size_t const count_op = multiple_buffer_sequence_.size();
+    for (std::size_t i = 0; i < count_op; ++i)
+    {
+      reference asio_multiple_buffer_sequence = multiple_buffer_sequence_.at(i);
+      native_reference native_multiple_buffer_sequence =
+          native_multiple_buffer_type_container_.at(i);
+      this->do_complete(native_multiple_buffer_sequence, 
+          asio_multiple_buffer_sequence, ec);
+      bytes_transferred_ += asio_multiple_buffer_sequence.bytes_transferred();
+    }
+  }
+
+  void do_complete(std::size_t _completed_operations, 
+      std::size_t _bytes_transferred, const asio::error_code& ec)
+  {
+    bytes_transferred_ = _bytes_transferred;
+    completed_operations_ = _completed_operations;
+    std::size_t const count_op = multiple_buffer_sequence_.size();
+    for (std::size_t i = 0; i < count_op; ++i)
+    {
+      reference asio_multiple_buffer_sequence = multiple_buffer_sequence_.at(i);
+      native_reference native_multiple_buffer_sequence =
+          native_multiple_buffer_type_container_.at(i);
+      this->do_complete(native_multiple_buffer_sequence, 
+          asio_multiple_buffer_sequence, ec);
+    }
   }
 };
 
