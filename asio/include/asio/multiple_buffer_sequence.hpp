@@ -474,7 +474,7 @@ public:
 
   void shrink_to_fit() const
   {
-    return m_container.shrink_to_fit();
+    return this->m_container.shrink_to_fit();
   }
 
   void clear()

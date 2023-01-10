@@ -83,9 +83,7 @@ public:
     fixup_buffer_sequence_adapter();
   }
 
-
 #if defined(ASIO_HAS_MOVE)
-
   multiple_buffer_sequence_op(
       multiple_buffer_sequence_op const&& other)
     : buffer_sequence_(std::move(other.buffer_sequence_)),
@@ -112,15 +110,7 @@ public:
 
     return (*this);
   }
-
-#endif // defined(ASIO_HAS_MOVE)
-
-#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY_MOVE)
-public:
-#else //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY_MOVE)
-private:
-#endif //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY_MOVE)
-
+#else // defined(ASIO_HAS_MOVE)
   multiple_buffer_sequence_op(
       multiple_buffer_sequence_op const& other)
     : buffer_sequence_(other.buffer_sequence_),  
@@ -145,6 +135,7 @@ private:
 
     return (*this);
   }
+#endif // defined(ASIO_HAS_MOVE)
 
 public:
   std::size_t count() const
