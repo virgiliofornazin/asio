@@ -11,7 +11,6 @@
 #ifndef ASIO_DETAIL_SOCKET_OPS_HPP
 #define ASIO_DETAIL_SOCKET_OPS_HPP
 
-#include <sys/socket.h>
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
 # pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
@@ -129,12 +128,11 @@ ASIO_DECL int listen(socket_type s,
 typedef WSABUF buf;
 #else // defined(ASIO_WINDOWS) || defined(__CYGWIN__)
 typedef iovec buf;
-#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-#if defined(__linux__)
-typedef mmsghdr mbufs;
-#endif // defined(__linux__)
-#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 #endif // defined(ASIO_WINDOWS) || defined(__CYGWIN__)
+
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+typedef struct mmsghdr mbufs;
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
 ASIO_DECL void init_buf(buf& b, void* data, size_t size);
 
