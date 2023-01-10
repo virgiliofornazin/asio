@@ -395,9 +395,10 @@ public:
    *
    * @param flags Flags specifying how the send call is to be made.
    *
-   * @returns The number of bytes sent.
+   * @returns The number of operations completed.
    *
-   * @throws asio::system_error Thrown on failure.
+   * @throws asio::system_error Thrown on failure, std::out_of_range on empty
+   * multiple buffer sequence
    */   
   template <typename MultipleBufferSequence>
   std::size_t send_multiple_buffer_sequence(
@@ -484,7 +485,7 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    *
-   * @returns The number of bytes sent. Returns 0 if an error occurred.
+   * @returns The number of operations completed.
    *
    * @note The send operation may not transmit all of the data to the peer.
    * Consider using the @ref write function if you need to ensure that all data
@@ -760,21 +761,11 @@ public:
    * socket_base::message_end_of_record bit is set then the received data marks
    * the end of a record.
    *
-   * @returns The number of bytes received.
+   * @returns The number of operations completed.
    *
-   * @throws asio::system_error Thrown on failure. An error code of
-   * asio::error::eof indicates that the connection was closed by the
-   * peer.
-   *
-   * @par Example
-   * To receive into a single data buffer use the @ref buffer function as
-   * follows:
-   * @code
-   * socket.receive(asio::buffer(data, size), out_flags);
-   * @endcode
-   * See the @ref buffer documentation for information on receiving into
-   * multiple buffers in one go, and how to use it with arrays, boost::array or
-   * std::vector.
+   * @throws asio::system_error Thrown on failure, std::out_of_range on empty
+   * multiple buffer sequence. An error code of asio::error::eof indicates that
+   * the connection was closed by the peer.
    */
   template <typename MultipleBufferSequence>
   std::size_t receive_multiple_buffer_sequence(
@@ -876,25 +867,15 @@ public:
    * socket_base::message_end_of_record bit is set then the received data marks
    * the end of a record.
    *
-   * @returns The number of bytes received.
+   * @returns The number of operations completed.
    *
-   * @throws asio::system_error Thrown on failure. An error code of
-   * asio::error::eof indicates that the connection was closed by the
-   * peer.
+   * @throws asio::system_error Thrown on failure, std::out_of_range on empty
+   * multiple buffer sequence. An error code of asio::error::eof indicates that
+   * the connection was closed by the peer.
    *
    * @note The receive operation may not receive all of the requested number of
    * bytes. Consider using the @ref read function if you need to ensure that the
    * requested amount of data is read before the blocking operation completes.
-   *
-   * @par Example
-   * To receive into a single data buffer use the @ref buffer function as
-   * follows:
-   * @code
-   * socket.receive(asio::buffer(data, size), 0, out_flags);
-   * @endcode
-   * See the @ref buffer documentation for information on receiving into
-   * multiple buffers in one go, and how to use it with arrays, boost::array or
-   * std::vector.
    */
   template <typename MultipleBufferSequence>
   std::size_t receive_multiple_buffer_sequence(
@@ -984,7 +965,7 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    *
-   * @returns The number of bytes received. Returns 0 if an error occurred.
+   * @returns The number of operations completed.
    *
    * @note The receive operation may not receive all of the requested number of
    * bytes. Consider using the @ref read function if you need to ensure that the

@@ -307,7 +307,7 @@ ASIO_DECL signed_size_type sendmmsg(socket_type s,
     mbufs* bufs, size_t count, int flags, asio::error_code& ec);
 
 ASIO_DECL size_t sync_sendmmsg(socket_type s, state_type state,
-    mbufs* bufs, size_t count, int flags, asio::error_code& ec);
+    mbufs* bufs, size_t count, int flags, bool all_empty, asio::error_code& ec);
 
 #if !defined(ASIO_HAS_IOCP)
 
