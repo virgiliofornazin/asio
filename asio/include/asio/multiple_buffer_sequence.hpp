@@ -440,7 +440,7 @@ public:
   typedef typename base_type::reverse_iterator reverse_iterator;
   typedef typename base_type::const_reverse_iterator const_reverse_iterator;
 
-protected:
+public:
   void throw_if_overflow(size_type new_size) const
   {
     if (new_size > multiple_buffer_sequence_maximum_operations_per_io)
@@ -457,7 +457,6 @@ protected:
     }
   }
 
-public:
   void reserve(size_type count)
   {
     throw_if_overflow(count);
@@ -475,7 +474,7 @@ public:
 
   void shrink_to_fit() const
   {
-    return this->m_container.shrink_to_fit();
+    return m_container.shrink_to_fit();
   }
 
   void clear()
@@ -552,22 +551,22 @@ public:
 
   void erase(iterator pos)
   {
-    return this->m_container.erase(pos);
+    this->m_container.erase(pos);
   }
 
   void erase(const_iterator pos)
   {
-    return this->m_container.erase(pos);
+    this->m_container.erase(pos);
   }
 
   void erase(iterator first, iterator last)
   {
-    return this->m_container.erase(first, last);
+    this->m_container.erase(first, last);
   }
 
   void erase(const_iterator first, const_iterator last)
   {
-    return this->m_container.erase(first, last);
+    this->m_container.erase(first, last);
   }
 
   void pop_back()

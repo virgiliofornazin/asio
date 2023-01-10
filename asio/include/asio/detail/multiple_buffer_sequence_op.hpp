@@ -47,12 +47,18 @@ public:
       buffer_sequence_adapter_type;
   typedef EndpointType endpoint_type;
 
+  void fixup_buffer_sequence_adapter()
+  {
+    buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequence_);
+  }
+
 public:
   multiple_buffer_sequence_op() ASIO_NOEXCEPT
     : buffer_sequence_(), buffer_sequence_adapter_(buffer_sequence_), 
       endpoint_(), completed_(false), flags_(0), bytes_transferred_(0),
       error_code_()
   {
+    fixup_buffer_sequence_adapter();
   }
 
   explicit multiple_buffer_sequence_op(
@@ -63,6 +69,7 @@ public:
       completed_(false), flags_(0), bytes_transferred_(0),
       error_code_()
   {
+    fixup_buffer_sequence_adapter();
   }
 
   explicit multiple_buffer_sequence_op(
@@ -73,43 +80,9 @@ public:
       completed_(false), flags_(0), bytes_transferred_(0),
       error_code_()
   {
+    fixup_buffer_sequence_adapter();
   }
 
-#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY)
-public:
-#else //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY)
-private:
-#endif //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY)
-
-  multiple_buffer_sequence_op(
-      multiple_buffer_sequence_op const& other)
-    : buffer_sequence_(other.buffer_sequence_),  
-      buffer_sequence_adapter_(buffer_sequence_), endpoint_(other.endpoint_), 
-      completed_(other.completed_), flags_(other.flags_), 
-      bytes_transferred_(other.bytes_transferred_),
-      error_code_(other.error_code_)
-  {
-  }
-
-  multiple_buffer_sequence_op & operator = (
-      multiple_buffer_sequence_op const& other)
-  {
-    buffer_sequence_ = other.buffer_sequence_;
-    buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequence_);
-    endpoint_ = other.endpoint_;
-    completed_ = other.completed_;
-    flags_ = other.flags_;
-    bytes_transferred_ = other;bytes_transferred_;
-    error_code_ = other.error_code_;
-
-    return (*this);
-  }
-
-#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_MOVE)
-public:
-#else //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_MOVE)
-private:
-#endif //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_MOVE)
 
 #if defined(ASIO_HAS_MOVE)
 
@@ -123,13 +96,14 @@ private:
       bytes_transferred_(std::move(other.bytes_transferred_)),
       error_code_(std::move(other.error_code_))
   {
+    fixup_buffer_sequence_adapter();
   }
 
   multiple_buffer_sequence_op & operator = (
       multiple_buffer_sequence_op const&& other)
   {
     buffer_sequence_ = std::move(other.buffer_sequence_);
-    buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequence_);
+    fixup_buffer_sequence_adapter();
     endpoint_ = std::move(other.endpoint_);
     completed_ = std::move(other.completed_);
     flags_ = std::move(other.flags_);
@@ -140,6 +114,37 @@ private:
   }
 
 #endif // defined(ASIO_HAS_MOVE)
+
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY_MOVE)
+public:
+#else //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY_MOVE)
+private:
+#endif //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY_MOVE)
+
+  multiple_buffer_sequence_op(
+      multiple_buffer_sequence_op const& other)
+    : buffer_sequence_(other.buffer_sequence_),  
+      buffer_sequence_adapter_(buffer_sequence_), endpoint_(other.endpoint_), 
+      completed_(other.completed_), flags_(other.flags_), 
+      bytes_transferred_(other.bytes_transferred_),
+      error_code_(other.error_code_)
+  {
+    fixup_buffer_sequence_adapter();
+  }
+
+  multiple_buffer_sequence_op & operator = (
+      multiple_buffer_sequence_op const& other)
+  {
+    buffer_sequence_ = other.buffer_sequence_;
+    fixup_buffer_sequence_adapter();
+    endpoint_ = other.endpoint_;
+    completed_ = other.completed_;
+    flags_ = other.flags_;
+    bytes_transferred_ = other;bytes_transferred_;
+    error_code_ = other.error_code_;
+
+    return (*this);
+  }
 
 public:
   std::size_t count() const
@@ -165,7 +170,7 @@ public:
   void reset() ASIO_NOEXCEPT
   {
     buffer_sequence_ = buffer_sequence_type();
-    buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequence_);
+    fixup_buffer_sequence_adapter();
     endpoint_ = endpoint_type();
     completed_ = false;
     flags_ = 0;
@@ -176,7 +181,7 @@ public:
   void reset(const buffer_sequence_type& _buffer_sequence) ASIO_NOEXCEPT
   {
     buffer_sequence_ = _buffer_sequence;
-    buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequence_);
+    fixup_buffer_sequence_adapter();
     endpoint_ = endpoint_type();
     completed_ = false;
     flags_ = 0;
@@ -188,7 +193,7 @@ public:
       const endpoint_type& _endpoint) ASIO_NOEXCEPT
   {
     buffer_sequence_ = _buffer_sequence;
-    buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequence_);
+    fixup_buffer_sequence_adapter();
     endpoint_ = _endpoint;
     completed_ = false;
     flags_ = 0;
@@ -227,7 +232,7 @@ public:
       ASIO_NOEXCEPT
   {
     buffer_sequence_ = _buffer_sequence;
-    buffer_sequence_adapter_ = buffer_sequence_adapter_type(buffer_sequence_);
+    fixup_buffer_sequence_adapter();
   }
   
   endpoint_type& endpoint() ASIO_NOEXCEPT
