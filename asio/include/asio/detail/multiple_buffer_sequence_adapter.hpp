@@ -41,7 +41,7 @@ public:
       native_multiple_buffer_type& destination)
   {
     typename MultipleBufferSequence::buffer_sequence_adapter_type&
-        buffer_sequence_adapter = source.to_buffer_sequence_adapter();
+        buffer_sequence_adapter = source.as_buffer_sequence_adapter();
     const typename MultipleBufferSequence::endpoint_type& endpoint = 
         source.endpoint();
     socket_ops::init_msghdr_msg_name(destination.msg_hdr.msg_name,
