@@ -1708,7 +1708,7 @@
 //
 // ASIO support for sendmmsg/recvmmsg support for operating systems listed below
 //
-// - Linux (with GNUlibc >= 2.12)
+// - Linux (with GNUlibc >= 2.12, using epoll, io_uring does not support it)
 // - FreeBSD 11
 // - NetBSD 7
 // - OpenBSD 7.2
@@ -1719,8 +1719,10 @@
 # if !defined(ASIO_DISABLE_MULTIPLE_BUFFER_SEQUENCE_IO)
 #  if defined(__linux__)
 #   if (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 12)
-#    define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
-#    define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO UIO_MAXIOV
+#    if !defined(ASIO_HAS_IO_URING_AS_DEFAULT)
+#     define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
+#     define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO UIO_MAXIOV
+#    endif // !defined(ASIO_HAS_IO_URING_AS_DEFAULT)
 #   endif // (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 12)
 #  endif // defined(__linux__)
 #  if defined(__FreeBSD__)
