@@ -20,8 +20,6 @@
 
 #include "asio/detail/config.hpp"
 
-#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-
 #include "asio/multiple_buffer_sequence.hpp"
 #include "asio/detail/socket_types.hpp"
 
@@ -204,7 +202,5 @@ public:
 #if defined(ASIO_HEADER_ONLY)
 # include "asio/detail/impl/buffer_sequence_adapter.ipp"
 #endif // defined(ASIO_HEADER_ONLY)
-
-#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
 #endif // ASIO_DETAIL_MULTIPLE_BUFFER_SEQUENCE_ADAPTER_HPP
