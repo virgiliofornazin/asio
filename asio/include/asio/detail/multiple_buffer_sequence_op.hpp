@@ -43,9 +43,9 @@ class multiple_buffer_sequence_op
 {
 public:
   typedef BufferSequence buffer_sequence_type;
-  typedef buffer_sequence_adapter<buffer_sequence_type, buffer_sequence_type>
-      buffer_sequence_adapter_type;
   typedef EndpointType endpoint_type;
+  typedef asio::detail::buffer_sequence_adapter<buffer_sequence_type,
+      buffer_sequence_type> buffer_sequence_adapter_type;
 
   void fixup_buffer_sequence_adapter()
   {
@@ -208,12 +208,12 @@ public:
     return buffer_sequence_;
   }
 
-  buffer_sequence_adapter_type& as_buffer_sequence_adapter() ASIO_NOEXCEPT
+  buffer_sequence_adapter_type& buffer_sequence_adapter() ASIO_NOEXCEPT
   {
     return buffer_sequence_adapter_;
   }
   
-  const buffer_sequence_adapter_type& as_buffer_sequence_adapter() const
+  const buffer_sequence_adapter_type& buffer_sequence_adapter() const
       ASIO_NOEXCEPT
   {
     return buffer_sequence_adapter_;
