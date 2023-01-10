@@ -586,8 +586,7 @@ public:
         Handler, IoExecutor> op;
     typename op::ptr p = { asio::detail::addressof(handler),
       op::ptr::allocate(handler), 0 };
-    int protocol = impl.protocol_.type();
-    p.p = new (p.v) op(success_ec_, impl.socket_, protocol,
+    p.p = new (p.v) op(success_ec_, impl.socket_,
         multiple_buffer_sequence, flags, handler, io_ex);
 
     // Optionally register for per-operation cancellation.

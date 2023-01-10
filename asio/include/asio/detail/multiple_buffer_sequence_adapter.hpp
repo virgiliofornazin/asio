@@ -39,16 +39,16 @@ public:
   typedef struct mmsghdr native_multiple_buffer_type;
 
   template <typename MultipleBufferSequence>
-  void do_prepare(MultipleBufferSequence& source,
+  void do_prepare_op(MultipleBufferSequence& source,
       native_multiple_buffer_type& destination)
   {
     typename MultipleBufferSequence::buffer_sequence_adapter_type&
-        buffer_sequence_adapter = source.buffer_sequence_adapter();
+        buffer_sequence_adapter = source.to_buffer_sequence_adapter();
     const typename MultipleBufferSequence::endpoint_type& endpoint = 
         source.endpoint();
     socket_ops::init_msghdr_msg_name(destination.msg_hdr.msg_name,
         endpoint.data());
-    destination.msg_hdr.msg_namelen = static_cast<int>(endpoint.size);
+    destination.msg_hdr.msg_namelen = static_cast<int>(endpoint.size());
     destination.msg_hdr.msg_iov = buffer_sequence_adapter.buffers();
     destination.msg_hdr.msg_iovlen = buffer_sequence_adapter.count();
     destination.msg_hdr.msg_control = NULL;
@@ -57,7 +57,7 @@ public:
   }
 
   template <typename MultipleBufferSequence>
-  void do_complete(native_multiple_buffer_type& source,
+  void do_complete_op(native_multiple_buffer_type& source,
       MultipleBufferSequence& destination, const asio::error_code& ec)
   {
     typename MultipleBufferSequence::endpoint_type& endpoint = 
@@ -155,7 +155,7 @@ public:
       reference asio_multiple_buffer_sequence = multiple_buffer_sequence_.at(i);
       native_reference native_multiple_buffer_sequence =
           native_multiple_buffer_type_container_.at(i);
-      this->do_prepare(asio_multiple_buffer_sequence, 
+      this->do_prepare_op(asio_multiple_buffer_sequence, 
           native_multiple_buffer_sequence);
     }
     completed_operations_ = 0;
@@ -173,7 +173,7 @@ public:
       reference asio_multiple_buffer_sequence = multiple_buffer_sequence_.at(i);
       native_reference native_multiple_buffer_sequence =
           native_multiple_buffer_type_container_.at(i);
-      this->do_complete(native_multiple_buffer_sequence, 
+      this->do_complete_op(native_multiple_buffer_sequence, 
           asio_multiple_buffer_sequence, ec);
       bytes_transferred_ += asio_multiple_buffer_sequence.bytes_transferred();
     }
@@ -190,7 +190,7 @@ public:
       reference asio_multiple_buffer_sequence = multiple_buffer_sequence_.at(i);
       native_reference native_multiple_buffer_sequence =
           native_multiple_buffer_type_container_.at(i);
-      this->do_complete(native_multiple_buffer_sequence, 
+      this->do_complete_op(native_multiple_buffer_sequence, 
           asio_multiple_buffer_sequence, ec);
     }
   }

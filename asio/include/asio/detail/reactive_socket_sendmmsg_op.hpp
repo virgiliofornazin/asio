@@ -76,6 +76,11 @@ public:
     return result;
   }
 
+  MultipleBufferSequence& multiple_buffer_sequence() ASIO_NOEXCEPT
+  {
+    return multiple_buffer_sequence_;
+  }
+
 private:
   socket_type socket_;
   socket_ops::state_type state_;
@@ -130,7 +135,7 @@ public:
     // deallocated the memory here.
     detail::binder4<Handler, asio::error_code, std::size_t, std::size_t, 
         std::size_t> handler(o->handler_, o->ec_,  /* TODO loop */ 0, 
-        o->multiple_buffer_sequence_.size(),
+        o->multiple_buffer_sequence().size(),
         /* TODO loop */  o->bytes_transferred_);
     p.h = asio::detail::addressof(handler.handler_);
     p.reset();

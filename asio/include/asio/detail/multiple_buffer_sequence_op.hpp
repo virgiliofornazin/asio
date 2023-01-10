@@ -212,7 +212,7 @@ public:
     return buffer_sequence_;
   }
 
-  buffer_sequence_adapter_type to_buffer_sequence_adapter() ASIO_NOEXCEPT
+  buffer_sequence_adapter_type& to_buffer_sequence_adapter() ASIO_NOEXCEPT
   {
     return buffer_sequence_adapter_;
   }
