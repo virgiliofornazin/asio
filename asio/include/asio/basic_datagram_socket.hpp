@@ -956,7 +956,7 @@ public:
       async_send(buffer_sequence, flags, composed_token);
       ++iterator;
     }
-  }  
+  }
 
   /// Send a datagram to the specified endpoint.
   /**
