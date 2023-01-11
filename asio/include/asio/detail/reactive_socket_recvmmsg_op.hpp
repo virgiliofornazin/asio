@@ -43,11 +43,13 @@ class reactive_socket_recvmmsg_op_base : public reactor_op
 {
 public:
   reactive_socket_recvmmsg_op_base(const asio::error_code& success_ec,
-      socket_type socket, MultipleBufferSequence& multiple_buffer_sequence,
+      socket_type socket, socket_ops::state_type state,
+      MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags, func_type complete_func)
     : reactor_op(success_ec,
         &reactive_socket_recvmmsg_op_base::do_perform, complete_func),
       socket_(socket),
+      state_(state),
       multiple_buffer_sequence_(multiple_buffer_sequence),
       flags_(flags)
   {
@@ -62,11 +64,17 @@ public:
       mbufs(o->multiple_buffer_sequence_);
 
     status result = socket_ops::non_blocking_recvmmsg(o->socket_, 
-        mbufs.native_buffers(), mbufs.native_buffer_size(), o->flags_, o->ec_,
+        mbufs.native_buffers(), mbufs.native_buffer_size(), o->flags_,
+        (o->state_ & socket_ops::stream_oriented) != 0, o->ec_,
         o->bytes_transferred_, o->completed_ops_)
         ? done : not_done;
 
     mbufs.do_complete(o->completed_ops_, o->bytes_transferred_, o->ec_);
+
+    if (result == done)
+      if ((o->state_ & socket_ops::stream_oriented) != 0)
+        if (o->bytes_transferred_ == 0)
+          result = done_and_exhausted;
 
     ASIO_HANDLER_REACTOR_OPERATION((*o, "non_blocking_recvmmsg",
           o->ec_, o->bytes_transferred_));
@@ -81,6 +89,7 @@ public:
 
 private:
   socket_type socket_;
+  socket_ops::state_type state_;
   MultipleBufferSequence& multiple_buffer_sequence_;
   socket_base::message_flags flags_;
 };
@@ -94,11 +103,12 @@ public:
   ASIO_DEFINE_HANDLER_PTR(reactive_socket_recvmmsg_op);
 
   reactive_socket_recvmmsg_op(const asio::error_code& success_ec,
-      socket_type socket, MultipleBufferSequence& multiple_buffer_sequence,
+      socket_type socket, socket_ops::state_type state,
+      MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags, Handler& handler,
       const IoExecutor& io_ex)
     : reactive_socket_recvmmsg_op_base<MultipleBufferSequence>(
-        success_ec, socket, multiple_buffer_sequence, flags,
+        success_ec, socket, state, multiple_buffer_sequence, flags,
         &reactive_socket_recvmmsg_op::do_complete),
       handler_(ASIO_MOVE_CAST(Handler)(handler)),
       work_(handler_, io_ex)

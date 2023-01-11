@@ -358,7 +358,7 @@ public:
       IoExecutor> op;
     typename op::ptr p = { asio::detail::addressof(handler),
       op::ptr::allocate(handler), 0 };
-    p.p = new (p.v) op(success_ec_, impl.socket_,
+    p.p = new (p.v) op(success_ec_, impl.socket_, impl.state_, 
         multiple_buffer_sequence, flags, handler, io_ex);
 
     // Optionally register for per-operation cancellation.
@@ -586,7 +586,7 @@ public:
         Handler, IoExecutor> op;
     typename op::ptr p = { asio::detail::addressof(handler),
       op::ptr::allocate(handler), 0 };
-    p.p = new (p.v) op(success_ec_, impl.socket_,
+    p.p = new (p.v) op(success_ec_, impl.socket_, impl.state_,
         multiple_buffer_sequence, flags, handler, io_ex);
 
     // Optionally register for per-operation cancellation.

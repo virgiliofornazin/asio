@@ -1375,25 +1375,28 @@ ASIO_DECL signed_size_type recvmmsg(socket_type s, mbufs* bufs,
   ts.tv_nsec = 0;
 #if defined(ASIO_HAS_MSG_NOSIGNAL)
   flags |= MSG_NOSIGNAL;
-  flags |= MSG_WAITFORONE;
 #endif // defined(ASIO_HAS_MSG_NOSIGNAL)  
+  flags |= MSG_WAITFORONE;
   signed_size_type result = ::recvmmsg(s, bufs, count, flags, &ts);
   get_last_error(ec, result < 0);
   return result;
 }
 
 ASIO_DECL size_t sync_recvmmsg(socket_type s, state_type state, mbufs* bufs, 
-    size_t count, int flags, asio::error_code& ec)
+    size_t count, int flags, bool all_empty, asio::error_code& ec)
 {
   if (s == invalid_socket)
   {
     ec = asio::error::bad_descriptor;
     return 0;
   }
-  
-#if defined(ASIO_HAS_MSG_NOSIGNAL)
-  flags |= MSG_NOSIGNAL;
-#endif // defined(ASIO_HAS_MSG_NOSIGNAL)
+
+  // A request to read 0 bytes on a stream is a no-op.
+  if (all_empty && (state & stream_oriented))
+  {
+    asio::error::clear(ec);
+    return 0;
+  }
 
   // Read some data.
   for (;;)
@@ -1401,6 +1404,13 @@ ASIO_DECL size_t sync_recvmmsg(socket_type s, state_type state, mbufs* bufs,
     // Try to complete the operation without blocking.
     signed_size_type operations = socket_ops::recvmmsg(
         s, bufs, count, flags, ec);
+
+    // Check for EOF.
+    if ((state & stream_oriented) && operations == 0)
+    {
+      ec = asio::error::eof;
+      return 0;
+    }
 
     // Check if operation succeeded.
     if (operations >= 0)
@@ -1415,13 +1425,13 @@ ASIO_DECL size_t sync_recvmmsg(socket_type s, state_type state, mbufs* bufs,
     // Wait for socket to become ready.
     if (socket_ops::poll_read(s, 0, -1, ec) < 0)
       return 0;
-  }  
+  }
 }
 
 #if !defined(ASIO_HAS_IOCP)
 
-ASIO_DECL bool non_blocking_recvmmsg(socket_type s, mbufs* bufs, 
-    size_t count, int flags, asio::error_code& ec, size_t& bytes_transferred,
+ASIO_DECL bool non_blocking_recvmmsg(socket_type s, mbufs* bufs, size_t count,
+    int flags, bool is_stream, asio::error_code& ec, size_t& bytes_transferred,
     size_t& completed_ops)
 {
   for (;;)
@@ -1429,6 +1439,13 @@ ASIO_DECL bool non_blocking_recvmmsg(socket_type s, mbufs* bufs,
     // Read some data.
     signed_size_type operations = socket_ops::recvmmsg(
         s, bufs, count, flags, ec);
+
+    // Check for end of stream.
+    if (is_stream && operations == 0)
+    {
+      ec = asio::error::eof;
+      return true;
+    }
 
     // Check if operation succeeded.
     if (operations >= 0)
@@ -1951,7 +1968,7 @@ ASIO_DECL size_t sync_sendmmsg(socket_type s, state_type state,
     // Wait for socket to become ready.
     if (socket_ops::poll_write(s, 0, -1, ec) < 0)
       return 0;
-  }  
+  }
 }
 
 #if !defined(ASIO_HAS_IOCP)
@@ -1991,7 +2008,7 @@ ASIO_DECL bool non_blocking_sendmmsg(socket_type s, mbufs* bufs,
     bytes_transferred = 0;
     completed_ops = 0;
     return true;
-  }  
+  }
 }
 
 #endif // !defined(ASIO_HAS_IOCP)

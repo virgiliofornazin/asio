@@ -64,11 +64,17 @@ public:
       mbufs(o->multiple_buffer_sequence_);
 
     status result = socket_ops::non_blocking_sendmmsg(o->socket_,
-        mbufs.native_buffers(), mbufs.native_buffer_size(), o->flags_, o->ec_,
+        mbufs.native_buffers(), mbufs.native_buffer_size(), o->flags_,
+        (o->state_ & socket_ops::stream_oriented) != 0, o->ec_,
         o->bytes_transferred_, o->completed_ops_) 
         ? done : not_done;
 
     mbufs.do_complete(o->completed_ops_, o->bytes_transferred_, o->ec_);
+
+    if (result == done)
+      if ((o->state_ & socket_ops::stream_oriented) != 0)
+        if (o->bytes_transferred_ < mbufs.total_size())
+          result = done_and_exhausted;
 
     ASIO_HANDLER_REACTOR_OPERATION((*o, "non_blocking_sendmmsg",
           o->ec_, o->bytes_transferred_));
