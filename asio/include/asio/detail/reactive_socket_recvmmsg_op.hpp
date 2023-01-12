@@ -143,7 +143,7 @@ public:
         bool> handler(o->handler_, o->ec_,
         0 /* TODO-MBS bytes_transferred */,
         0 /* TODO-MBS operation_index */,
-        false /* TODO-MBS operation_completed);
+        false /* TODO-MBS operation_completed */);
     p.h = asio::detail::addressof(handler.handler_);
     p.reset();
 
