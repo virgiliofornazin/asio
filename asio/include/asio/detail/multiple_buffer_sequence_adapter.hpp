@@ -2,7 +2,7 @@
 // detail/multiple_buffer_sequence_adapter.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// ( TODO: update header with copyright of asio C++ library )
+// ( TODO-MBS: update header with copyright of asio C++ library )
 //
 // Support for multiple datagram buffers code patches on Linux operating system
 // Copyright (c) 2023 virgilio A. Fornazin (virgiliofornazin at gmail dot com)
@@ -87,8 +87,8 @@ public:
   typedef typename multiple_buffer_sequence_type::reference reference;
   
 private:
-// TODO: specialize native_multiple_buffer_type in asio::detail::array 
-// for fixed size multiple buffer sequence object
+  // TODO-MBS: specialize native_multiple_buffer_type in asio::detail::array 
+  // for fixed size multiple buffer sequence object
   typedef std::vector<native_multiple_buffer_type>
       native_multiple_buffer_type_container_type;
 

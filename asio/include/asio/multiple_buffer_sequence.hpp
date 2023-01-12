@@ -2,7 +2,7 @@
 // multiple_buffer_sequence.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// ( TODO: update header with copyright of asio C++ library )
+// ( TODO-MBS: update header with copyright of asio C++ library )
 //
 // Support for multiple datagram buffers code patches on Linux operating system
 // Copyright (c) 2023 virgilio A. Fornazin (virgiliofornazin at gmail dot com)

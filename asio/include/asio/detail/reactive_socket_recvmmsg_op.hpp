@@ -2,7 +2,7 @@
 // detail/reactive_socket_recvmmsg_op.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// ( TODO: update header with copyright of asio C++ library )
+// ( TODO-MBS: update header with copyright of asio C++ library )
 //
 // Support for multiple datagram buffers code patches on Linux operating system
 // Copyright (c) 2023 virgilio A. Fornazin (virgiliofornazin at gmail dot com)
@@ -139,10 +139,11 @@ public:
     // with the handler. Consequently, a local copy of the handler is required
     // to ensure that any owning sub-object remains valid until after we have
     // deallocated the memory here.
+    // TODO-MBS: loop throught mbufs to invoke callback
     detail::binder4<Handler, asio::error_code, std::size_t, std::size_t, 
-        std::size_t> handler(o->handler_, o->ec_, /* TODO loop */ 0, 
+        std::size_t> handler(o->handler_, o->ec_, /* TODO-MBS loop */ 0, 
         o->multiple_buffer_sequence().size(),
-        /* TODO loop */ o->bytes_transferred_);
+        /* TODO-MBS loop */ o->bytes_transferred_);
     p.h = asio::detail::addressof(handler.handler_);
     p.reset();
 
