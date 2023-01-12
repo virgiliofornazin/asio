@@ -395,6 +395,15 @@ private:
     completed_ops_ = _completed_ops;
   }
 
+  std::size_t add_completed_ops(std::size_t _completed_ops = 1) ASIO_NOEXCEPT
+  {
+    std::size_t prev = completed_ops_;
+
+    completed_ops_ += _completed_ops;
+
+    return prev;
+  }
+
   std::size_t bytes_transferred() const ASIO_NOEXCEPT
   {
     return bytes_transferred_;
@@ -403,6 +412,15 @@ private:
   void set_bytes_transferred(std::size_t _bytes_transferred) ASIO_NOEXCEPT
   {
     bytes_transferred_ = _bytes_transferred;
+  }
+
+  std::size_t add_bytes_transferred(std::size_t _bytes_transferred) ASIO_NOEXCEPT
+  {
+    std::size_t prev = bytes_transferred_;
+
+    bytes_transferred_ += _bytes_transferred;
+
+    return prev;
   }
 };
 

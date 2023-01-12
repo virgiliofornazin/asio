@@ -141,11 +141,14 @@ public:
     // deallocated the memory here.
     // TODO-MBS: loop throught mbufs to invoke callback
     detail::binder4<Handler, asio::error_code, std::size_t, std::size_t, 
-        std::size_t> handler(o->handler_, o->ec_,  /* TODO-MBS loop */ 0, 
-        o->multiple_buffer_sequence().size(),
-        /* TODO-MBS loop */  o->bytes_transferred_);
+        bool> handler(o->handler_, o->ec_,
+        0 /* TODO-MBS bytes_transferred */,
+        0 /* TODO-MBS operation_index */,
+        false /* TODO-MBS operation_completed);
     p.h = asio::detail::addressof(handler.handler_);
     p.reset();
+
+    // TODO-MBS: loop throught mbufs to invoke callback
 
     // Make the upcall if required.
     if (owner)
