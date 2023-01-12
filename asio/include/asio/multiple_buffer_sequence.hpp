@@ -89,7 +89,9 @@ public:
       const_reverse_iterator;
 
 protected:
-  container_type m_container;
+  container_type container_;
+  std::size_t completed_operations_;
+  std::size_t bytes_transferred_;
 
 protected:
   void throw_out_of_range() const
@@ -107,10 +109,12 @@ protected:
   
 public:
   base_multiple_buffer_sequence()
+    : completed_operations_(0), bytes_transferred_(0)
   {
   }
 
   base_multiple_buffer_sequence(const buffer_sequence_type& buffer_sequence)
+    : completed_operations_(0), bytes_transferred_(0)
   {
     push_back(buffer_sequence);
   }
@@ -118,6 +122,7 @@ public:
   explicit base_multiple_buffer_sequence(
       const buffer_sequence_type& buffer_sequence,
       const endpoint_type& endpoint)
+    : completed_operations_(0), bytes_transferred_(0)      
   {
     push_back(buffer_sequence, endpoint);
   }
@@ -129,14 +134,18 @@ private:
 #endif //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY)
 
   base_multiple_buffer_sequence(base_multiple_buffer_sequence const& other)
-    : m_container(other.begin(), other.end())
+    : container_(other.begin(), other.end()), 
+      completed_operations_(other.completed_operations_),
+      bytes_transferred_(other.bytes_transferred_)
   {
   }
 
   base_multiple_buffer_sequence& operator = (
       base_multiple_buffer_sequence const& other)
   {
-    m_container = other.m_container;
+    container_ = other.container_;
+    completed_operations_ = other.completed_operations_;
+    bytes_transferred_ = other.bytes_transferred_;
     return (*this);
   }
 
@@ -149,14 +158,18 @@ private:
 #if defined(ASIO_HAS_MOVE)
 
   base_multiple_buffer_sequence(base_multiple_buffer_sequence&& other)
-    : m_container(std::move(other))
+    : container_(std::move(other)), 
+      completed_operations_(std::move(other.completed_operations_)),
+      bytes_transferred_(std::move(other.bytes_transferred_))
   {
   }
   
   base_multiple_buffer_sequence& operator = (
       base_multiple_buffer_sequence&& other)
   {
-    m_container = std::move(other.m_container);
+    container_ = std::move(other.container_);
+    completed_operations_ = std::move(other.completed_operations_);
+    bytes_transferred_ = std::move(other.bytes_transferred_);
     return (*this);
   }
 
@@ -169,7 +182,7 @@ private:
   
   size_type count() const ASIO_NOEXCEPT
   {
-    return m_container.size();
+    return container_.size();
   }
   
   size_type total_size() const ASIO_NOEXCEPT
@@ -220,7 +233,7 @@ private:
 
     for (size_t i = 0; i < op_count; ++i)
     {
-      reference buffer_sequence = m_container.at(i);
+      reference buffer_sequence = container_.at(i);
 
       buffer_sequence.reset();
     }
@@ -241,122 +254,122 @@ private:
 
   reference at(size_type index)
   {
-    return m_container.at(index);
+    return container_.at(index);
   }
 
   const_reference at(size_type index) const
   {
-    return m_container.at(index);
+    return container_.at(index);
   }
 
   reference operator[](std::size_t index)
   {
-    return m_container[index];
+    return container_[index];
   }
 
   const_reference operator[](std::size_t index) const
   {
-    return m_container[index];
+    return container_[index];
   }
 
   reference front()
   {
-    return m_container.front();
+    return container_.front();
   }
 
   const_reference front() const
   {
-    return m_container.front();
+    return container_.front();
   }
 
   reference back()
   {
-    return m_container.back();
+    return container_.back();
   }
 
   const_reference back() const
   {
-    return m_container.back();
+    return container_.back();
   }
 
   pointer data() ASIO_NOEXCEPT
   {
-    return m_container.data();
+    return container_.data();
   }
 
   const_pointer data() const ASIO_NOEXCEPT
   {
-    return m_container.data();
+    return container_.data();
   }
 
   iterator begin() ASIO_NOEXCEPT
   {
-    return m_container.begin();
+    return container_.begin();
   }
 
   const_iterator begin() const ASIO_NOEXCEPT
   {
-    return m_container.begin();
+    return container_.begin();
   }
 
   const_iterator cbegin() const ASIO_NOEXCEPT
   {
-    return m_container.cbegin();
+    return container_.cbegin();
   }
 
   iterator end() ASIO_NOEXCEPT
   {
-    return m_container.end();
+    return container_.end();
   }
 
   const_iterator end() const ASIO_NOEXCEPT
   {
-    return m_container.end();
+    return container_.end();
   }
 
   const_iterator cend() const ASIO_NOEXCEPT
   {
-    return m_container.cend();
+    return container_.cend();
   }
 
   reverse_iterator rbegin() ASIO_NOEXCEPT
   {
-    return m_container.rbegin();
+    return container_.rbegin();
   }
 
   const_reverse_iterator rbegin() const ASIO_NOEXCEPT
   {
-    return m_container.rbegin();
+    return container_.rbegin();
   }
 
   const_reverse_iterator crbegin() const ASIO_NOEXCEPT
   {
-    return m_container.crbegin();
+    return container_.crbegin();
   }
 
   reverse_iterator rend() ASIO_NOEXCEPT
   {
-    return m_container.rend();
+    return container_.rend();
   }
 
   const_reverse_iterator rend() const ASIO_NOEXCEPT
   {
-    return m_container.rend();
+    return container_.rend();
   }
 
   const_reverse_iterator crend() const ASIO_NOEXCEPT
   {
-    return m_container.crend();
+    return container_.crend();
   }
 
   bool empty() const ASIO_NOEXCEPT
   {
-    return m_container.empty();
+    return container_.empty();
   }
 
   size_type size() const ASIO_NOEXCEPT
   {
-    return m_container.size();
+    return container_.size();
   }
 
   size_type max_size() const ASIO_NOEXCEPT
@@ -367,7 +380,29 @@ private:
   void swap(base_multiple_buffer_sequence<BufferSequence, EndpointType, 
       ContainerType>& other)
   {
-    std::swap(m_container, other.m_container);
+    std::swap(container_, other.container_);
+    std::swap(completed_operations_, other.completed_operations_);
+    std::swap(bytes_transferred_, other.bytes_transferred_);
+  }
+
+  std::size_t completed_operations() const ASIO_NOEXCEPT
+  {
+    return completed_operations_;
+  }
+
+  void set_completed_operations(std::size_t _completed_operations) ASIO_NOEXCEPT
+  {
+    completed_operations_ = _completed_operations;
+  }
+
+  std::size_t bytes_transferred() const ASIO_NOEXCEPT
+  {
+    return bytes_transferred_;
+  }
+
+  void set_bytes_transferred(std::size_t _bytes_transferred) ASIO_NOEXCEPT
+  {
+    bytes_transferred_ = _bytes_transferred;
   }
 };
 
@@ -461,25 +496,25 @@ public:
   {
     throw_if_overflow(count);
 
-    this->m_container.reserve(count);
+    this->container_.reserve(count);
   }
 
   size_type capacity() const ASIO_NOEXCEPT
   {
-    return this->m_container.capacity() > 
+    return this->container_.capacity() > 
         multiple_buffer_sequence_maximum_operations_per_io ? 
         multiple_buffer_sequence_maximum_operations_per_io : 
-        this->m_container.capacity();
+        this->container_.capacity();
   }
 
   void shrink_to_fit() const
   {
-    return this->m_container.shrink_to_fit();
+    return this->container_.shrink_to_fit();
   }
 
   void clear()
   {
-    this->m_container.clear();
+    this->container_.clear();
   }
 
 #if defined(ASIO_HAS_VARIADIC_TEMPLATES)
@@ -488,7 +523,7 @@ public:
   {
     throw_if_full();
     
-    this->m_container.emplace(pos, value_type(std::forward<Args>(args)...));
+    this->container_.emplace(pos, value_type(std::forward<Args>(args)...));
   }
 
   template <typename... Args>
@@ -496,14 +531,14 @@ public:
   {
     throw_if_full();
     
-    this->m_container.emplace_back(value_type(std::forward<Args>(args)...));
+    this->container_.emplace_back(value_type(std::forward<Args>(args)...));
   }
 #else // defined(ASIO_HAS_VARIADIC_TEMPLATES)
   void insert(const_iterator pos, const buffer_sequence_type& buffer_sequence)
   {
     throw_if_full();
     
-    this->m_container.insert(pos, value_type(buffer_sequence);
+    this->container_.insert(pos, value_type(buffer_sequence);
   }
 
   void insert(const_iterator pos, const buffer_sequence_type& buffer_sequence,
@@ -511,7 +546,7 @@ public:
   {
     throw_if_full();
     
-    this->m_container.insert(pos, value_type(buffer_sequence, endpoint));
+    this->container_.insert(pos, value_type(buffer_sequence, endpoint));
   }
 
   void insert(const_iterator pos, const buffer_sequence_type& buffer_sequence,
@@ -519,7 +554,7 @@ public:
   {
     throw_if_full();
     
-    this->m_container.insert(pos, value_type(buffer_sequence, endpoint, flags));
+    this->container_.insert(pos, value_type(buffer_sequence, endpoint, flags));
   }
 
   void push_back(const_iterator pos,
@@ -527,7 +562,7 @@ public:
   {
     throw_if_full();
     
-    this->m_container.push_back(pos, value_type(buffer_sequence);
+    this->container_.push_back(pos, value_type(buffer_sequence);
   }
 
   void push_back(const_iterator pos,
@@ -536,7 +571,7 @@ public:
   {
     throw_if_full();
     
-    this->m_container.push_back(pos, value_type(buffer_sequence, endpoint));
+    this->container_.push_back(pos, value_type(buffer_sequence, endpoint));
   }
 
   void push_back(const_iterator pos, 
@@ -545,33 +580,33 @@ public:
   {
     throw_if_full();
 
-    this->m_container.push_back(pos, value_type(buffer_sequence, endpoint, flags));
+    this->container_.push_back(pos, value_type(buffer_sequence, endpoint, flags));
   }
 #endif // defined(ASIO_HAS_VARIADIC_TEMPLATES)
 
   void erase(iterator pos)
   {
-    this->m_container.erase(pos);
+    this->container_.erase(pos);
   }
 
   void erase(const_iterator pos)
   {
-    this->m_container.erase(pos);
+    this->container_.erase(pos);
   }
 
   void erase(iterator first, iterator last)
   {
-    this->m_container.erase(first, last);
+    this->container_.erase(first, last);
   }
 
   void erase(const_iterator first, const_iterator last)
   {
-    this->m_container.erase(first, last);
+    this->container_.erase(first, last);
   }
 
   void pop_back()
   {
-    this->m_container.pop_back();
+    this->container_.pop_back();
   }
 
   void resize(size_type count)
@@ -580,7 +615,7 @@ public:
 
     size_type const previous_size = this->size();
 
-    this->m_container.resize(count);
+    this->container_.resize(count);
   }
 };
 

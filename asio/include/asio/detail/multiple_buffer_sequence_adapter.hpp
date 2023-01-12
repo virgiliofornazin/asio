@@ -97,14 +97,10 @@ private:
   native_multiple_buffer_type_container_type
       native_multiple_buffer_type_container_;
 
-  std::size_t completed_operations_;
-  std::size_t bytes_transferred_;
-
 public:
   explicit multiple_buffer_sequence_adapter(
       multiple_buffer_sequence_type& _multiple_buffer_sequence)
-    : multiple_buffer_sequence_(_multiple_buffer_sequence),
-      completed_operations_(0), bytes_transferred_(0)
+    : multiple_buffer_sequence_(_multiple_buffer_sequence)
   {
     do_prepare();
   }
@@ -139,9 +135,14 @@ public:
     return multiple_buffer_sequence_.full();
   }
 
-  std::size_t completed_operations() const
+  std::size_t completed_operations() const ASIO_NOEXCEPT
   {
-    return completed_operations_;
+    return multiple_buffer_sequence_.completed_operations();
+  }
+
+  std::size_t bytes_transferred() const ASIO_NOEXCEPT
+  {
+    return multiple_buffer_sequence_.bytes_transferred();
   }
 
   void do_prepare()
@@ -156,15 +157,14 @@ public:
       this->do_prepare_op(asio_multiple_buffer_sequence, 
           native_multiple_buffer_sequence);
     }
-    completed_operations_ = 0;
-    bytes_transferred_ = 0;
+    multiple_buffer_sequence_.set_completed_operations(0);
+    multiple_buffer_sequence_.set_bytes_transferred(0);
   }
 
-  void do_complete(std::size_t _completed_operations,
+  void do_complete(std::size_t completed_operations,
       const asio::error_code& ec)
   {
-    bytes_transferred_ = 0;
-    completed_operations_ = _completed_operations;
+    std::size_t bytes_transferred = 0;
     std::size_t const count_op = multiple_buffer_sequence_.size();
     for (std::size_t i = 0; i < count_op; ++i)
     {
@@ -173,15 +173,15 @@ public:
           native_multiple_buffer_type_container_.at(i);
       this->do_complete_op(native_multiple_buffer_sequence, 
           asio_multiple_buffer_sequence, ec);
-      bytes_transferred_ += asio_multiple_buffer_sequence.bytes_transferred();
+      bytes_transferred += asio_multiple_buffer_sequence.bytes_transferred();
     }
+    multiple_buffer_sequence_.set_completed_operations(completed_operations);
+    multiple_buffer_sequence_.set_bytes_transferred(bytes_transferred);
   }
 
-  void do_complete(std::size_t _completed_operations, 
-      std::size_t _bytes_transferred, const asio::error_code& ec)
+  void do_complete(std::size_t completed_operations, 
+      std::size_t bytes_transferred, const asio::error_code& ec)
   {
-    bytes_transferred_ = _bytes_transferred;
-    completed_operations_ = _completed_operations;
     std::size_t const count_op = multiple_buffer_sequence_.size();
     for (std::size_t i = 0; i < count_op; ++i)
     {
@@ -191,6 +191,8 @@ public:
       this->do_complete_op(native_multiple_buffer_sequence, 
           asio_multiple_buffer_sequence, ec);
     }
+    multiple_buffer_sequence_.set_completed_operations(completed_operations);
+    multiple_buffer_sequence_.set_bytes_transferred(bytes_transferred);
   }
 };
 
