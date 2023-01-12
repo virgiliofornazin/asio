@@ -1763,12 +1763,12 @@
 #   endif // defined(_AIX72)
 #  endif // defined(_AIX)
 #  if defined(__QNXNTO__)
-#   if defined(__QNXNTO__) && (__QNXNTO__ >= 700)
+#   if (__QNXNTO__ >= 700)
 #    define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
 #     if !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
 #      define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
 #     endif // !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
-#   endif // defined(__QNXNTO__) && (__QNXNTO__ >= 700)
+#   endif // (__QNXNTO__ >= 700)
 #  endif // defined(__QNXNTO__)
 # endif // !defined(ASIO_DISABLE_MULTIPLE_BUFFER_SEQUENCE_IO)
 #endif // !defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
