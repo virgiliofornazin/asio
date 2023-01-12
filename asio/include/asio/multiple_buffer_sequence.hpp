@@ -90,7 +90,7 @@ public:
 
 protected:
   container_type container_;
-  std::size_t completed_operations_;
+  std::size_t completed_ops_;
   std::size_t bytes_transferred_;
 
 protected:
@@ -109,12 +109,12 @@ protected:
   
 public:
   base_multiple_buffer_sequence()
-    : completed_operations_(0), bytes_transferred_(0)
+    : completed_ops_(0), bytes_transferred_(0)
   {
   }
 
   base_multiple_buffer_sequence(const buffer_sequence_type& buffer_sequence)
-    : completed_operations_(0), bytes_transferred_(0)
+    : completed_ops_(0), bytes_transferred_(0)
   {
     push_back(buffer_sequence);
   }
@@ -122,7 +122,7 @@ public:
   explicit base_multiple_buffer_sequence(
       const buffer_sequence_type& buffer_sequence,
       const endpoint_type& endpoint)
-    : completed_operations_(0), bytes_transferred_(0)      
+    : completed_ops_(0), bytes_transferred_(0)      
   {
     push_back(buffer_sequence, endpoint);
   }
@@ -135,7 +135,7 @@ private:
 
   base_multiple_buffer_sequence(base_multiple_buffer_sequence const& other)
     : container_(other.begin(), other.end()), 
-      completed_operations_(other.completed_operations_),
+      completed_ops_(other.completed_ops_),
       bytes_transferred_(other.bytes_transferred_)
   {
   }
@@ -144,7 +144,7 @@ private:
       base_multiple_buffer_sequence const& other)
   {
     container_ = other.container_;
-    completed_operations_ = other.completed_operations_;
+    completed_ops_ = other.completed_ops_;
     bytes_transferred_ = other.bytes_transferred_;
     return (*this);
   }
@@ -159,7 +159,7 @@ private:
 
   base_multiple_buffer_sequence(base_multiple_buffer_sequence&& other)
     : container_(std::move(other)), 
-      completed_operations_(std::move(other.completed_operations_)),
+      completed_ops_(std::move(other.completed_ops_)),
       bytes_transferred_(std::move(other.bytes_transferred_))
   {
   }
@@ -168,7 +168,7 @@ private:
       base_multiple_buffer_sequence&& other)
   {
     container_ = std::move(other.container_);
-    completed_operations_ = std::move(other.completed_operations_);
+    completed_ops_ = std::move(other.completed_ops_);
     bytes_transferred_ = std::move(other.bytes_transferred_);
     return (*this);
   }
@@ -381,18 +381,18 @@ private:
       ContainerType>& other)
   {
     std::swap(container_, other.container_);
-    std::swap(completed_operations_, other.completed_operations_);
+    std::swap(completed_ops_, other.completed_ops_);
     std::swap(bytes_transferred_, other.bytes_transferred_);
   }
 
-  std::size_t completed_operations() const ASIO_NOEXCEPT
+  std::size_t completed_ops() const ASIO_NOEXCEPT
   {
-    return completed_operations_;
+    return completed_ops_;
   }
 
-  void set_completed_operations(std::size_t _completed_operations) ASIO_NOEXCEPT
+  void set_completed_ops(std::size_t _completed_ops) ASIO_NOEXCEPT
   {
-    completed_operations_ = _completed_operations;
+    completed_ops_ = _completed_ops;
   }
 
   std::size_t bytes_transferred() const ASIO_NOEXCEPT
