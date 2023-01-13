@@ -1370,14 +1370,11 @@ bool non_blocking_recvmsg(socket_type s,
 ASIO_DECL signed_size_type recvmmsg(socket_type s, mbufs* bufs,
     size_t count, int flags, asio::error_code& ec)
 {
-  struct timespec ts;
-  ts.tv_sec = 0;
-  ts.tv_nsec = 0;
 #if defined(ASIO_HAS_MSG_NOSIGNAL)
   flags |= MSG_NOSIGNAL;
-#endif // defined(ASIO_HAS_MSG_NOSIGNAL)  
+#endif // defined(ASIO_HAS_MSG_NOSIGNAL)
   flags |= MSG_WAITFORONE;
-  signed_size_type result = ::recvmmsg(s, bufs, count, flags, &ts);
+  signed_size_type result = ::recvmmsg(s, bufs, count, flags, nullptr);
   get_last_error(ec, result < 0);
   return result;
 }

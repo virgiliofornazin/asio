@@ -139,7 +139,6 @@ public:
     // with the handler. Consequently, a local copy of the handler is required
     // to ensure that any owning sub-object remains valid until after we have
     // deallocated the memory here.
-    // TODO-MBS: loop throught mbufs to invoke callback
     detail::binder4<Handler, asio::error_code, std::size_t, std::size_t, 
         bool> handler(o->handler_, o->ec_,
         0 /* TODO-MBS bytes_transferred */,
