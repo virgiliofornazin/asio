@@ -290,7 +290,7 @@ public:
   // Send a datagram to the specified endpoint. Returns the number of bytes
   // sent.
   size_t send_multiple_buffer_sequence_to(implementation_type& impl,
-      const null_buffers&, socket_base::message_flags flags,
+      const null_buffers&, socket_base::message_flags,
       asio::error_code& ec)
   {
     // Wait for socket to become ready.
@@ -510,7 +510,7 @@ public:
   // Receive a datagram with the endpoint of the sender. Returns the number of
   // bytes received.
   size_t receive_multiple_buffer_sequence_to_from(implementation_type& impl,
-      const null_buffers&, socket_base::message_flags flags,
+      const null_buffers&, socket_base::message_flags,
       asio::error_code& ec)
   {
     // Wait for socket to become ready.

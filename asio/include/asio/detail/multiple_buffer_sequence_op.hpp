@@ -241,7 +241,7 @@ public:
     endpoint_ = _endpoint;
   }
 
-  const bool completed() ASIO_NOEXCEPT
+  bool completed() const ASIO_NOEXCEPT
   {
     return completed_;
   }
