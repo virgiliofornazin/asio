@@ -419,8 +419,8 @@ public:
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     // Try to send the buffers one by one in case of missing system call for
     // send_multiple_buffer_sequence...
-    std::size_t sent_buffers = 0;
-    std::size_t sent_bytes = 0;
+    std::size_t operations_executed = 0;
+    std::size_t total_bytes_transferred = 0;
     typename MultipleBufferSequence::iterator iterator =
         multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::iterator end =
@@ -441,13 +441,13 @@ public:
       {
         break;
       }
-      ++sent_buffers;
-      sent_bytes += bytes_transferred;
+      ++operations_executed;
+      total_bytes_transferred += bytes_transferred;
       ++iterator;
     }
-    multiple_buffer_sequence.set_operations_executed(sent_buffers);
-    multiple_buffer_sequence.set_bytes_transferred(sent_bytes);
-    return sent_buffers;
+    multiple_buffer_sequence.set_operations_executed(operations_executed);
+    multiple_buffer_sequence.set_bytes_transferred(total_bytes_transferred);
+    return operations_executed;
   }
 
   /// Send some data on the socket.
@@ -510,8 +510,8 @@ public:
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
     // Try to send the buffers one by one in case of missing system call for
     // send_multiple_buffer_sequence...
-    std::size_t sent_buffers = 0;
-    std::size_t sent_bytes = 0;
+    std::size_t operations_executed = 0;
+    std::size_t total_bytes_transferred = 0;
     typename MultipleBufferSequence::iterator iterator =
         multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::iterator end =
@@ -530,13 +530,13 @@ public:
       {
         break;
       }
-      ++sent_buffers;
-      sent_bytes += bytes_transferred;
+      ++operations_executed;
+      total_bytes_transferred += bytes_transferred;
       ++iterator;
     }
-    multiple_buffer_sequence.set_operations_executed(sent_buffers);
-    multiple_buffer_sequence.set_bytes_transferred(sent_bytes);
-    return sent_buffers;
+    multiple_buffer_sequence.set_operations_executed(operations_executed);
+    multiple_buffer_sequence.set_bytes_transferred(total_bytes_transferred);
+    return operations_executed;
   }
 
   /// Start an asynchronous send.
