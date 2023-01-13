@@ -234,11 +234,10 @@ struct handler_type_requirements
     asio_true_handler_type; \
   \
   ASIO_HANDLER_TYPE_REQUIREMENTS_ASSERT( \
-      sizeof(asio::detail::four_arg_handler_test( \
+      sizeof(asio::detail::three_arg_handler_test( \
           asio::detail::rvref< \
             asio_true_handler_type>(), \
           static_cast<const asio::error_code*>(0), \
-          static_cast<const std::size_t*>(0), \
           static_cast<const std::size_t*>(0), \
           static_cast<const std::size_t*>(0))) == 1, \
       "ReadMultipleHandler type requirements not met") \
@@ -252,7 +251,6 @@ struct handler_type_requirements
         asio::detail::rorlvref< \
           asio_true_handler_type>()( \
             asio::detail::lvref<const asio::error_code>(), \
-            asio::detail::lvref<const std::size_t>(), \
             asio::detail::lvref<const std::size_t>(), \
             asio::detail::lvref<const std::size_t>()), \
         char(0))> ASIO_UNUSED_TYPEDEF
@@ -292,11 +290,10 @@ struct handler_type_requirements
     asio_true_handler_type; \
   \
   ASIO_HANDLER_TYPE_REQUIREMENTS_ASSERT( \
-      sizeof(asio::detail::four_arg_handler_test( \
+      sizeof(asio::detail::three_arg_handler_test( \
           asio::detail::rvref< \
             asio_true_handler_type>(), \
           static_cast<const asio::error_code*>(0), \
-          static_cast<const std::size_t*>(0), \
           static_cast<const std::size_t*>(0), \
           static_cast<const std::size_t*>(0))) == 1, \
       "WriteMultipleHandler type requirements not met") \
@@ -310,7 +307,6 @@ struct handler_type_requirements
         asio::detail::rorlvref< \
           asio_true_handler_type>()( \
             asio::detail::lvref<const asio::error_code>(), \
-            asio::detail::lvref<const std::size_t>(), \
             asio::detail::lvref<const std::size_t>(), \
             asio::detail::lvref<const std::size_t>()), \
         char(0))> ASIO_UNUSED_TYPEDEF

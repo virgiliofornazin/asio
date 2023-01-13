@@ -236,7 +236,7 @@ ASIO_DECL size_t sync_recvmmsg(socket_type s, state_type state, mbufs* bufs,
 
 ASIO_DECL bool non_blocking_recvmmsg(socket_type s, mbufs* bufs, size_t count,
     int flags, bool is_stream, asio::error_code& ec, size_t& bytes_transferred,
-    size_t& completed_ops);
+    size_t& operations_executed);
 
 #endif // !defined(ASIO_HAS_IOCP)
 
@@ -313,7 +313,7 @@ ASIO_DECL size_t sync_sendmmsg(socket_type s, state_type state,
 
 ASIO_DECL bool non_blocking_sendmmsg(socket_type s, mbufs* bufs,
     size_t count, int flags, asio::error_code& ec, size_t& bytes_transferred,
-    size_t& completed_ops);
+    size_t& operations_executed);
 
 #endif // !defined(ASIO_HAS_IOCP)
 

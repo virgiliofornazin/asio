@@ -37,7 +37,7 @@ public:
   std::size_t bytes_transferred_;
 
   // The number of operations completed, to be passed to the completion handler.
-  std::size_t completed_ops_;
+  std::size_t operations_executed_;
 
   // Status returned by perform function. May be used to decide whether it is
   // worth performing more operations on the descriptor immediately.
@@ -58,7 +58,7 @@ protected:
       ec_(success_ec),
       cancellation_key_(0),
       bytes_transferred_(0),
-      completed_ops_(0),
+      operations_executed_(0),
       perform_func_(perform_func)
   {
   }

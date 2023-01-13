@@ -66,10 +66,10 @@ public:
     status result = socket_ops::non_blocking_recvmmsg(o->socket_, 
         mbufs.native_buffers(), mbufs.native_buffer_size(), o->flags_,
         (o->state_ & socket_ops::stream_oriented) != 0, o->ec_,
-        o->bytes_transferred_, o->completed_ops_)
+        o->bytes_transferred_, o->operations_executed_)
         ? done : not_done;
 
-    mbufs.do_complete(o->completed_ops_, o->bytes_transferred_, o->ec_);
+    mbufs.do_complete(o->operations_executed_, o->bytes_transferred_, o->ec_);
 
     if (result == done)
       if ((o->state_ & socket_ops::stream_oriented) != 0)
@@ -139,15 +139,11 @@ public:
     // with the handler. Consequently, a local copy of the handler is required
     // to ensure that any owning sub-object remains valid until after we have
     // deallocated the memory here.
-    detail::binder4<Handler, asio::error_code, std::size_t, std::size_t, 
-        bool> handler(o->handler_, o->ec_,
-        0 /* TODO-MBS bytes_transferred */,
-        0 /* TODO-MBS operation_index */,
-        false /* TODO-MBS operation_completed */);
+    detail::binder3<Handler, asio::error_code, std::size_t, std::size_t>
+        handler(o->handler_, o->ec_, o->bytes_transferred_,
+          o->operations_executed_);
     p.h = asio::detail::addressof(handler.handler_);
     p.reset();
-
-    // TODO-MBS: loop throught mbufs to invoke callback
     
     // Make the upcall if required.
     if (owner)

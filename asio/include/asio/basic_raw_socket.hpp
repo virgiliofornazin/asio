@@ -430,7 +430,7 @@ public:
       sent_bytes += bytes_transferred;
       ++iterator;
     }
-    multiple_buffer_sequence.set_completed_ops(sent_buffers);
+    multiple_buffer_sequence.set_operations_executed(sent_buffers);
     multiple_buffer_sequence.set_bytes_transferred(sent_bytes);
     return sent_buffers;
   }
@@ -525,7 +525,7 @@ public:
       sent_bytes += bytes_transferred;
       ++iterator;
     }
-    multiple_buffer_sequence.set_completed_ops(sent_buffers);
+    multiple_buffer_sequence.set_operations_executed(sent_buffers);
     multiple_buffer_sequence.set_bytes_transferred(sent_bytes);
     return sent_buffers;
   }
@@ -610,7 +610,7 @@ public:
       sent_bytes += bytes_transferred;
       ++iterator;
     }
-    multiple_buffer_sequence.set_completed_ops(sent_buffers);
+    multiple_buffer_sequence.set_operations_executed(sent_buffers);
     multiple_buffer_sequence.set_bytes_transferred(sent_bytes);
     return sent_buffers;
   }
@@ -706,8 +706,7 @@ public:
    * @code void handler(
    *   const asio::error_code& error, // Result of operation.
    *   std::size_t bytes_transferred // Number of bytes sent.
-   *   std::size_t operation_index // Mutiple buffer sequence operation index.
-   *   bool operation_completed // All mutiple buffer operations are completed.
+   *   std::size_t operations_executed // Completed mutiple buffer operations.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
    * not, the completion handler will not be invoked from within this function.
@@ -715,7 +714,7 @@ public:
    * manner equivalent to using asio::post().
    *
    * @par Completion Signature
-   * @code void(asio::error_code, std::size_t, std::size_t, bool) @endcode
+   * @code void(asio::error_code, std::size_t, std::size_t) @endcode
    *
    * @note The async_send operation can only be used with a connected socket.
    * Use the async_send_to function to send data on an unconnected raw
@@ -733,17 +732,17 @@ public:
    */
   template <typename MultipleBufferSequence,
       ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
-        std::size_t, std::size_t, bool)) WriteMultipleToken
+        std::size_t, std::size_t)) WriteMultipleToken
           ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
   ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(WriteMultipleToken,
-      void (asio::error_code, std::size_t, std::size_t, bool))
+      void (asio::error_code, std::size_t, std::size_t))
   async_send_multiple_buffer_sequence(
       MultipleBufferSequence& multiple_buffer_sequence,
       ASIO_MOVE_ARG(WriteMultipleToken) token
         ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
     ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
       async_initiate<WriteMultipleToken,
-        void (asio::error_code, std::size_t, std::size_t, bool)>(
+        void (asio::error_code, std::size_t, std::size_t)>(
           declval<initiate_async_send_multiple_buffer_sequence>(), token,
           multiple_buffer_sequence, socket_base::message_flags(0))))
   {
@@ -752,7 +751,7 @@ public:
     if (multiple_buffer_sequence.size() > 1)
     {
       return async_initiate<WriteMultipleToken,
-        void (asio::error_code, std::size_t, std::size_t, bool)>(
+        void (asio::error_code, std::size_t, std::size_t)>(
           initiate_async_send_multiple_buffer_sequence(this), token,
           multiple_buffer_sequence, socket_base::message_flags(0));
     }
@@ -782,14 +781,17 @@ public:
       {
         multiple_buffer_sequence_op.do_complete(bytes_transferred, 
             ec);
-        std::size_t completed_ops;
+        std::size_t operations_executed;
         {
           detail::scoped_lock<detail::mutex> scoped_lock(lock);
-          completed_ops = multiple_buffer_sequence.add_completed_ops();
+          multiple_buffer_sequence.add_operations_executed();
           multiple_buffer_sequence.add_bytes_transferred(bytes_transferred);
+          operations_executed = multiple_buffer_sequence.operations_executed();
         }
-        moved_token(ec, bytes_transferred, index,
-            completed_ops == multiple_buffer_sequence.count());
+        if (operations_executed == multiple_buffer_sequence.count())
+        {
+          moved_token(ec, bytes_transferred, multiple_buffer_sequence.count());
+        }
       };
       async_send(buffer_sequence, composed_token);
       ++iterator;
@@ -881,8 +883,7 @@ public:
    * @code void handler(
    *   const asio::error_code& error, // Result of operation.
    *   std::size_t bytes_transferred // Number of bytes sent.
-   *   std::size_t operation_index // Mutiple buffer sequence operation index.
-   *   bool operation_completed // All mutiple buffer operations are completed.
+   *   std::size_t operations_executed // Completed mutiple buffer operations.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
    * not, the completion handler will not be invoked from within this function.
@@ -890,7 +891,7 @@ public:
    * manner equivalent to using asio::post().
    *
    * @par Completion Signature
-   * @code void(asio::error_code, std::size_t, std::size_t, bool) @endcode
+   * @code void(asio::error_code, std::size_t, std::size_t) @endcode
    *
    * @note The async_send operation can only be used with a connected socket.
    * Use the async_send_to function to send data on an unconnected raw
@@ -908,10 +909,10 @@ public:
    */
   template <typename MultipleBufferSequence,
       ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
-        std::size_t, std::size_t, bool)) WriteMultipleToken
+        std::size_t, std::size_t)) WriteMultipleToken
           ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
   ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(WriteMultipleToken,
-      void (asio::error_code, std::size_t, std::size_t, bool))
+      void (asio::error_code, std::size_t, std::size_t))
   async_send_multiple_buffer_sequence(
       MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags,
@@ -919,7 +920,7 @@ public:
         ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
     ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
       async_initiate<WriteMultipleToken,
-        void (asio::error_code, std::size_t, std::size_t, bool)>(
+        void (asio::error_code, std::size_t, std::size_t)>(
           declval<initiate_async_send_multiple_buffer_sequence>(), token,
           multiple_buffer_sequence, flags)))
   {
@@ -928,7 +929,7 @@ public:
     if (multiple_buffer_sequence.size() > 1)
     {
       return async_initiate<WriteMultipleToken,
-        void (asio::error_code, std::size_t, std::size_t, bool)>(
+        void (asio::error_code, std::size_t, std::size_t)>(
           initiate_async_send_multiple_buffer_sequence(this), token,
           multiple_buffer_sequence, flags);
     }
@@ -958,14 +959,17 @@ public:
       {
         multiple_buffer_sequence_op.do_complete(bytes_transferred, 
             ec);
-        std::size_t completed_ops;
+        std::size_t operations_executed;
         {
           detail::scoped_lock<detail::mutex> scoped_lock(lock);
-          completed_ops = multiple_buffer_sequence.add_completed_ops();
+          multiple_buffer_sequence.add_operations_executed();
           multiple_buffer_sequence.add_bytes_transferred(bytes_transferred);
+          operations_executed = multiple_buffer_sequence.operations_executed();
         }
-        moved_token(ec, bytes_transferred, index,
-            completed_ops == multiple_buffer_sequence.count());
+        if (operations_executed == multiple_buffer_sequence.count())
+        {
+          moved_token(ec, bytes_transferred, multiple_buffer_sequence.count());
+        }
       };
       async_send(buffer_sequence, flags, composed_token);
       ++iterator;
@@ -1068,7 +1072,7 @@ public:
       sent_bytes += bytes_transferred;
       ++iterator;
     }
-    multiple_buffer_sequence.set_completed_ops(sent_buffers);
+    multiple_buffer_sequence.set_operations_executed(sent_buffers);
     multiple_buffer_sequence.set_bytes_transferred(sent_bytes);
     return sent_buffers;
   }
@@ -1164,7 +1168,7 @@ public:
       sent_bytes += bytes_transferred;
       ++iterator;
     }
-    multiple_buffer_sequence.set_completed_ops(sent_buffers);
+    multiple_buffer_sequence.set_operations_executed(sent_buffers);
     multiple_buffer_sequence.set_bytes_transferred(sent_bytes);
     return sent_buffers;
   }
@@ -1252,7 +1256,7 @@ public:
       sent_bytes += bytes_transferred;
       ++iterator;
     }
-    multiple_buffer_sequence.set_completed_ops(sent_buffers);
+    multiple_buffer_sequence.set_operations_executed(sent_buffers);
     multiple_buffer_sequence.set_bytes_transferred(sent_bytes);
     return sent_buffers;
   }
@@ -1352,8 +1356,7 @@ public:
    * @code void handler(
    *   const asio::error_code& error, // Result of operation.
    *   std::size_t bytes_transferred // Number of bytes sent.
-   *   std::size_t operation_index // Mutiple buffer sequence operation index.
-   *   bool operation_completed // All mutiple buffer operations are completed.
+   *   std::size_t operations_executed // Completed mutiple buffer operations.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
    * not, the completion handler will not be invoked from within this function.
@@ -1361,7 +1364,7 @@ public:
    * manner equivalent to using asio::post().
    *
    * @par Completion Signature
-   * @code void(asio::error_code, std::size_t, std::size_t, bool) @endcode
+   * @code void(asio::error_code, std::size_t, std::size_t) @endcode
    *
    * @par Per-Operation Cancellation
    * On POSIX or Windows operating systems, this asynchronous operation supports
@@ -1375,17 +1378,17 @@ public:
    */
   template <typename MultipleBufferSequence,
       ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
-        std::size_t, std::size_t, bool)) WriteMultipleToken
+        std::size_t, std::size_t)) WriteMultipleToken
           ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
   ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(WriteMultipleToken,
-      void (asio::error_code, std::size_t, std::size_t, bool))
+      void (asio::error_code, std::size_t, std::size_t))
   async_send_multiple_buffer_sequence_to(
       MultipleBufferSequence& multiple_buffer_sequence,
       ASIO_MOVE_ARG(WriteMultipleToken) token
         ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
     ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
       async_initiate<WriteMultipleToken,
-        void (asio::error_code, std::size_t, std::size_t, bool)>(
+        void (asio::error_code, std::size_t, std::size_t)>(
           declval<initiate_async_send_multiple_buffer_sequence_to>(), token,
           multiple_buffer_sequence, socket_base::message_flags(0))))
   {
@@ -1394,7 +1397,7 @@ public:
     if (multiple_buffer_sequence.size() > 1)
     {
       return async_initiate<WriteMultipleToken,
-        void (asio::error_code, std::size_t, std::size_t, bool)>(
+        void (asio::error_code, std::size_t, std::size_t)>(
           initiate_async_send_multiple_buffer_sequence_to(this), token,
           multiple_buffer_sequence, socket_base::message_flags(0));
     }
@@ -1426,14 +1429,17 @@ public:
       {
         multiple_buffer_sequence_op.do_complete(bytes_transferred, 
             ec);
-        std::size_t completed_ops;
+        std::size_t operations_executed;
         {
           detail::scoped_lock<detail::mutex> scoped_lock(lock);
-          completed_ops = multiple_buffer_sequence.add_completed_ops();
+          multiple_buffer_sequence.add_operations_executed();
           multiple_buffer_sequence.add_bytes_transferred(bytes_transferred);
+          operations_executed = multiple_buffer_sequence.operations_executed();
         }
-        moved_token(ec, bytes_transferred, index,
-            completed_ops == multiple_buffer_sequence.count());
+        if (operations_executed == multiple_buffer_sequence.count())
+        {
+          moved_token(ec, bytes_transferred, multiple_buffer_sequence.count());
+        }
       };
       async_send_to(buffer_sequence, endpoint, composed_token);
       ++iterator;
@@ -1527,8 +1533,7 @@ public:
    * @code void handler(
    *   const asio::error_code& error, // Result of operation.
    *   std::size_t bytes_transferred // Number of bytes sent.
-   *   std::size_t operation_index // Mutiple buffer sequence operation index.
-   *   bool operation_completed // All mutiple buffer operations are completed.
+   *   std::size_t operations_executed // Completed mutiple buffer operations.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
    * not, the completion handler will not be invoked from within this function.
@@ -1536,7 +1541,7 @@ public:
    * manner equivalent to using asio::post().
    *
    * @par Completion Signature
-   * @code void(asio::error_code, std::size_t, std::size_t, bool) @endcode
+   * @code void(asio::error_code, std::size_t, std::size_t) @endcode
    *
    * @par Per-Operation Cancellation
    * On POSIX or Windows operating systems, this asynchronous operation supports
@@ -1550,10 +1555,10 @@ public:
    */
   template <typename MultipleBufferSequence,
       ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
-        std::size_t, std::size_t, bool)) WriteMultipleToken
+        std::size_t, std::size_t)) WriteMultipleToken
           ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
   ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(WriteMultipleToken,
-      void (asio::error_code, std::size_t, std::size_t, bool))
+      void (asio::error_code, std::size_t, std::size_t))
   async_send_multiple_buffer_sequence_to(
       MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags,
@@ -1561,7 +1566,7 @@ public:
         ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
     ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
       async_initiate<WriteMultipleToken,
-        void (asio::error_code, std::size_t, std::size_t, bool)>(
+        void (asio::error_code, std::size_t, std::size_t)>(
           declval<initiate_async_send_multiple_buffer_sequence_to>(), token,
           multiple_buffer_sequence, flags)))
   {
@@ -1570,7 +1575,7 @@ public:
     if (multiple_buffer_sequence.size() > 1)
     {
       return async_initiate<WriteMultipleToken,
-        void (asio::error_code, std::size_t, std::size_t, bool)>(
+        void (asio::error_code, std::size_t, std::size_t)>(
           initiate_async_send_multiple_buffer_sequence_to(this), token,
           multiple_buffer_sequence, flags);
     }
@@ -1602,14 +1607,17 @@ public:
       {
         multiple_buffer_sequence_op.do_complete(bytes_transferred, 
             ec);
-        std::size_t completed_ops;
+        std::size_t operations_executed;
         {
           detail::scoped_lock<detail::mutex> scoped_lock(lock);
-          completed_ops = multiple_buffer_sequence.add_completed_ops();
+          multiple_buffer_sequence.add_operations_executed();
           multiple_buffer_sequence.add_bytes_transferred(bytes_transferred);
+          operations_executed = multiple_buffer_sequence.operations_executed();
         }
-        moved_token(ec, bytes_transferred, index,
-            completed_ops == multiple_buffer_sequence.count());
+        if (operations_executed == multiple_buffer_sequence.count())
+        {
+          moved_token(ec, bytes_transferred, multiple_buffer_sequence.count());
+        }
       };
       async_send_to(buffer_sequence, endpoint, flags, composed_token);
       ++iterator;
@@ -1956,8 +1964,7 @@ public:
    * @code void handler(
    *   const asio::error_code& error, // Result of operation.
    *   std::size_t bytes_transferred // Number of bytes received.
-   *   std::size_t operation_index // Mutiple buffer sequence operation index.
-   *   bool operation_completed // All mutiple buffer operations are completed.
+   *   std::size_t operations_executed // Completed mutiple buffer operations.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
    * not, the completion handler will not be invoked from within this function.
@@ -1965,7 +1972,7 @@ public:
    * manner equivalent to using asio::post().
    *
    * @par Completion Signature
-   * @code void(asio::error_code, std::size_t, std::size_t, bool) @endcode
+   * @code void(asio::error_code, std::size_t, std::size_t) @endcode
    *
    * @note The async_receive operation can only be used with a connected socket.
    * Use the async_receive_from function to receive data on an unconnected
@@ -1983,17 +1990,17 @@ public:
    */
   template <typename MultipleBufferSequence,
       ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
-        std::size_t, std::size_t, bool)) ReadMultipleToken
+        std::size_t, std::size_t)) ReadMultipleToken
           ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
   ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(ReadMultipleToken,
-      void (asio::error_code, std::size_t, std::size_t, bool))
+      void (asio::error_code, std::size_t, std::size_t))
   async_receive_multiple_buffer_sequence(
       MultipleBufferSequence& multiple_buffer_sequence,
       ASIO_MOVE_ARG(ReadMultipleToken) token
         ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
     ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
       async_initiate<ReadMultipleToken,
-        void (asio::error_code, std::size_t, std::size_t, bool)>(
+        void (asio::error_code, std::size_t, std::size_t)>(
           declval<initiate_async_receive_multiple_buffer_sequence>(), token,
           multiple_buffer_sequence, socket_base::message_flags(0))))
   {
@@ -2002,7 +2009,7 @@ public:
     if (multiple_buffer_sequence.size() > 1)
     {
       return async_initiate<ReadMultipleToken,
-        void (asio::error_code, std::size_t, std::size_t, bool)>(
+        void (asio::error_code, std::size_t, std::size_t)>(
           initiate_async_receive_multiple_buffer_sequence(this), token,
           multiple_buffer_sequence, socket_base::message_flags(0));
     }
@@ -2020,9 +2027,9 @@ public:
     {
       multiple_buffer_sequence_op.do_complete(bytes_transferred, 
           ec);
-      multiple_buffer_sequence.add_completed_ops();
+      multiple_buffer_sequence.add_operations_executed();
       multiple_buffer_sequence.add_bytes_transferred(bytes_transferred);
-      moved_token(ec, bytes_transferred, 1, true);
+      moved_token(ec, bytes_transferred, 1);
     };
     async_receive(buffer_sequence, composed_token);
   }
@@ -2112,8 +2119,7 @@ public:
    * @code void handler(
    *   const asio::error_code& error, // Result of operation.
    *   std::size_t bytes_transferred // Number of bytes received.
-   *   std::size_t operation_index // Mutiple buffer sequence operation index.
-   *   bool operation_completed // All mutiple buffer operations are completed.
+   *   std::size_t operations_executed // Completed mutiple buffer operations.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
    * not, the completion handler will not be invoked from within this function.
@@ -2121,7 +2127,7 @@ public:
    * manner equivalent to using asio::post().
    *
    * @par Completion Signature
-   * @code void(asio::error_code, std::size_t, std::size_t, bool) @endcode
+   * @code void(asio::error_code, std::size_t, std::size_t) @endcode
    *
    * @note The async_receive operation can only be used with a connected socket.
    * Use the async_receive_from function to receive data on an unconnected
@@ -2139,10 +2145,10 @@ public:
    */
   template <typename MultipleBufferSequence,
       ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
-        std::size_t, std::size_t, bool)) ReadMultipleToken
+        std::size_t, std::size_t)) ReadMultipleToken
           ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
   ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(ReadMultipleToken,
-      void (asio::error_code, std::size_t, std::size_t, bool))
+      void (asio::error_code, std::size_t, std::size_t))
   async_receive_multiple_buffer_sequence(
       MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags,
@@ -2150,7 +2156,7 @@ public:
         ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
     ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
       async_initiate<ReadMultipleToken,
-        void (asio::error_code, std::size_t, std::size_t, bool)>(
+        void (asio::error_code, std::size_t, std::size_t)>(
           declval<initiate_async_receive_multiple_buffer_sequence>(), token,
           multiple_buffer_sequence, flags)))
   {
@@ -2159,7 +2165,7 @@ public:
     if (multiple_buffer_sequence.size() > 1)
     {
       return async_initiate<ReadMultipleToken,
-        void (asio::error_code, std::size_t, std::size_t, bool)>(
+        void (asio::error_code, std::size_t, std::size_t)>(
           initiate_async_receive_multiple_buffer_sequence(this), token,
           multiple_buffer_sequence, flags);
     }
@@ -2177,9 +2183,9 @@ public:
     {
       multiple_buffer_sequence_op.do_complete(bytes_transferred, 
           ec);
-      multiple_buffer_sequence.add_completed_ops();
+      multiple_buffer_sequence.add_operations_executed();
       multiple_buffer_sequence.add_bytes_transferred(bytes_transferred);
-      moved_token(ec, bytes_transferred, 1, true);
+      moved_token(ec, bytes_transferred, 1);
     };
     async_receive(buffer_sequence, flags, composed_token);
   }
@@ -2521,8 +2527,7 @@ public:
    * @code void handler(
    *   const asio::error_code& error, // Result of operation.
    *   std::size_t bytes_transferred // Number of bytes received.
-   *   std::size_t operation_index // Mutiple buffer sequence operation index.
-   *   bool operation_completed // All mutiple buffer operations are completed.
+   *   std::size_t operations_executed // Completed mutiple buffer operations.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
    * not, the completion handler will not be invoked from within this function.
@@ -2530,7 +2535,7 @@ public:
    * manner equivalent to using asio::post().
    *
    * @par Completion Signature
-   * @code void(asio::error_code, std::size_t, std::size_t, bool) @endcode
+   * @code void(asio::error_code, std::size_t, std::size_t) @endcode
    *
    * @par Per-Operation Cancellation
    * On POSIX or Windows operating systems, this asynchronous operation supports
@@ -2544,17 +2549,17 @@ public:
    */
   template <typename MultipleBufferSequence,
       ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
-        std::size_t, std::size_t, bool)) ReadMultipleToken
+        std::size_t, std::size_t)) ReadMultipleToken
           ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
   ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(ReadMultipleToken,
-      void (asio::error_code, std::size_t, std::size_t, bool))
+      void (asio::error_code, std::size_t, std::size_t))
   async_receive_multiple_buffer_sequence_from(
       MultipleBufferSequence& multiple_buffer_sequence,
       ASIO_MOVE_ARG(ReadMultipleToken) token
         ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
     ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
       async_initiate<ReadMultipleToken,
-        void (asio::error_code, std::size_t, std::size_t, bool)>(
+        void (asio::error_code, std::size_t, std::size_t)>(
           declval<initiate_async_receive_multiple_buffer_sequence_from>(), token,
           multiple_buffer_sequence, socket_base::message_flags(0))))
   {
@@ -2563,7 +2568,7 @@ public:
     if (multiple_buffer_sequence.size() > 1)
     {
       return async_initiate<ReadMultipleToken,
-        void (asio::error_code, std::size_t, std::size_t, bool)>(
+        void (asio::error_code, std::size_t, std::size_t)>(
           initiate_async_receive_multiple_buffer_sequence_from(this), token, 
           multiple_buffer_sequence, socket_base::message_flags(0));
     }
@@ -2583,9 +2588,9 @@ public:
     {
       multiple_buffer_sequence_op.do_complete(bytes_transferred, 
           ec);
-      multiple_buffer_sequence.add_completed_ops();
+      multiple_buffer_sequence.add_operations_executed();
       multiple_buffer_sequence.add_bytes_transferred(bytes_transferred);
-      moved_token(ec, bytes_transferred, 1, true);
+      moved_token(ec, bytes_transferred, 1);
     };
     async_receive_from(buffer_sequence, endpoint, composed_token);
   }
@@ -2679,8 +2684,7 @@ public:
    * @code void handler(
    *   const asio::error_code& error, // Result of operation.
    *   std::size_t bytes_transferred // Number of bytes received.
-   *   std::size_t operation_index // Mutiple buffer sequence operation index.
-   *   bool operation_completed // All mutiple buffer operations are completed.
+   *   std::size_t operations_executed // Completed mutiple buffer operations.
    * ); @endcode
    * Regardless of whether the asynchronous operation completes immediately or
    * not, the completion handler will not be invoked from within this function.
@@ -2688,7 +2692,7 @@ public:
    * manner equivalent to using asio::post().
    *
    * @par Completion Signature
-   * @code void(asio::error_code, std::size_t, std::size_t, bool) @endcode
+   * @code void(asio::error_code, std::size_t, std::size_t) @endcode
    *
    * @par Per-Operation Cancellation
    * On POSIX or Windows operating systems, this asynchronous operation supports
@@ -2702,10 +2706,10 @@ public:
    */
   template <typename MultipleBufferSequence,
       ASIO_COMPLETION_TOKEN_FOR(void (asio::error_code,
-        std::size_t, std::size_t, bool)) ReadMultipleToken
+        std::size_t, std::size_t)) ReadMultipleToken
           ASIO_DEFAULT_COMPLETION_TOKEN_TYPE(executor_type)>
   ASIO_INITFN_AUTO_RESULT_TYPE_PREFIX(ReadMultipleToken,
-      void (asio::error_code, std::size_t, std::size_t, bool))
+      void (asio::error_code, std::size_t, std::size_t))
   async_receive_multiple_buffer_sequence_from(
       MultipleBufferSequence& multiple_buffer_sequence,
       socket_base::message_flags flags,
@@ -2713,7 +2717,7 @@ public:
         ASIO_DEFAULT_COMPLETION_TOKEN(executor_type))
     ASIO_INITFN_AUTO_RESULT_TYPE_SUFFIX((
       async_initiate<ReadMultipleToken,
-        void (asio::error_code, std::size_t, std::size_t, bool)>(
+        void (asio::error_code, std::size_t, std::size_t)>(
           declval<initiate_async_receive_multiple_buffer_sequence_from>(), token,
           multiple_buffer_sequence, flags)))
   {
@@ -2722,7 +2726,7 @@ public:
     if (multiple_buffer_sequence.size() > 1)
     {
       return async_initiate<ReadMultipleToken,
-        void (asio::error_code, std::size_t, std::size_t, bool)>(
+        void (asio::error_code, std::size_t, std::size_t)>(
           initiate_async_receive_multiple_buffer_sequence_from(this), token, 
           multiple_buffer_sequence, flags);
     }
@@ -2742,9 +2746,9 @@ public:
     {
       multiple_buffer_sequence_op.do_complete(bytes_transferred, 
           ec);
-      multiple_buffer_sequence.add_completed_ops();
+      multiple_buffer_sequence.add_operations_executed();
       multiple_buffer_sequence.add_bytes_transferred(bytes_transferred);
-      moved_token(ec, bytes_transferred, 1, true);
+      moved_token(ec, bytes_transferred, 1);
     };
     async_receive_from(buffer_sequence, endpoint, flags, composed_token);
   }
