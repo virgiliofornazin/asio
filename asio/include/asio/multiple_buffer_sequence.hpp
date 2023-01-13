@@ -32,9 +32,10 @@
 
 namespace asio {
 
-static const std::size_t multiple_buffer_sequence_maximum_operations_per_io = 1
+ASIO_CONSTEXPR static const std::size_t
+    multiple_buffer_sequence_maximum_operations_per_io = 1
 #if defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
-    * ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO
+      * ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO
 #endif // defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
 ;
 
