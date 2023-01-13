@@ -65,8 +65,7 @@ public:
 
     status result = socket_ops::non_blocking_sendmmsg(o->socket_,
         mbufs.native_buffers(), mbufs.native_buffer_size(), o->flags_,
-        (o->state_ & socket_ops::stream_oriented) != 0, o->ec_,
-        o->bytes_transferred_, o->operations_executed_) 
+        o->ec_, o->bytes_transferred_, o->operations_executed_)
         ? done : not_done;
 
     mbufs.do_complete(o->operations_executed_, o->bytes_transferred_, o->ec_);

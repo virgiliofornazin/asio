@@ -763,9 +763,6 @@ public:
         multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::iterator end =
         multiple_buffer_sequence.end();
-    std::size_t multiple_buffer_sequence_op_index = 0;
-    std::size_t multiple_buffer_sequence_op_count = 
-        multiple_buffer_sequence.size();
     while (iterator != end)
     {
       typename MultipleBufferSequence::value_type&
@@ -774,10 +771,8 @@ public:
           buffer_sequence = multiple_buffer_sequence_op.
           buffer_sequence();
       auto composed_token = [moved_token = std::move(token),
-          &multiple_buffer_sequence_op, &multiple_buffer_sequence, &lock,
-          index = multiple_buffer_sequence_op_index,
-          count = multiple_buffer_sequence_op_count](asio::error_code ec, 
-            std::size_t bytes_transferred) mutable
+          &multiple_buffer_sequence_op, &multiple_buffer_sequence, &lock]
+          (asio::error_code ec, std::size_t bytes_transferred) mutable
       {
         multiple_buffer_sequence_op.do_complete(bytes_transferred, 
             ec);
@@ -941,9 +936,6 @@ public:
         multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::iterator end =
         multiple_buffer_sequence.end();
-    std::size_t multiple_buffer_sequence_op_index = 0;
-    std::size_t multiple_buffer_sequence_op_count = 
-        multiple_buffer_sequence.size();
     while (iterator != end)
     {
       typename MultipleBufferSequence::value_type&
@@ -952,10 +944,8 @@ public:
           buffer_sequence = multiple_buffer_sequence_op.
           buffer_sequence();
       auto composed_token = [moved_token = std::move(token),
-          &multiple_buffer_sequence_op, &multiple_buffer_sequence, &lock,
-          index = multiple_buffer_sequence_op_index,
-          count = multiple_buffer_sequence_op_count](asio::error_code ec, 
-            std::size_t bytes_transferred) mutable
+          &multiple_buffer_sequence_op, &multiple_buffer_sequence, &lock]
+          (asio::error_code ec, std::size_t bytes_transferred) mutable
       {
         multiple_buffer_sequence_op.do_complete(bytes_transferred, 
             ec);
@@ -1409,9 +1399,6 @@ public:
         multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::iterator end =
         multiple_buffer_sequence.end();
-    std::size_t multiple_buffer_sequence_op_index = 0;
-    std::size_t multiple_buffer_sequence_op_count = 
-        multiple_buffer_sequence.size();
     while (iterator != end)
     {
       typename MultipleBufferSequence::value_type&
@@ -1422,10 +1409,8 @@ public:
       const typename MultipleBufferSequence::endpoint_type& endpoint = 
           multiple_buffer_sequence_op.endpoint();
       auto composed_token = [moved_token = std::move(token),
-          &multiple_buffer_sequence_op, &multiple_buffer_sequence, &lock,
-          index = multiple_buffer_sequence_op_index,
-          count = multiple_buffer_sequence_op_count](asio::error_code ec, 
-            std::size_t bytes_transferred) mutable
+          &multiple_buffer_sequence_op, &multiple_buffer_sequence, &lock]
+          (asio::error_code ec, std::size_t bytes_transferred) mutable
       {
         multiple_buffer_sequence_op.do_complete(bytes_transferred, 
             ec);
@@ -1587,9 +1572,6 @@ public:
         multiple_buffer_sequence.begin();
     typename MultipleBufferSequence::iterator end =
         multiple_buffer_sequence.end();
-    std::size_t multiple_buffer_sequence_op_index = 0;
-    std::size_t multiple_buffer_sequence_op_count = 
-        multiple_buffer_sequence.size();
     while (iterator != end)
     {
       typename MultipleBufferSequence::value_type&
@@ -1600,10 +1582,8 @@ public:
       const typename MultipleBufferSequence::endpoint_type& endpoint = 
           multiple_buffer_sequence_op.endpoint();
       auto composed_token = [moved_token = std::move(token),
-          &multiple_buffer_sequence_op, &multiple_buffer_sequence, &lock,
-          index = multiple_buffer_sequence_op_index,
-          count = multiple_buffer_sequence_op_count](asio::error_code ec, 
-            std::size_t bytes_transferred) mutable
+          &multiple_buffer_sequence_op, &multiple_buffer_sequence, &lock]
+          (asio::error_code ec, std::size_t bytes_transferred) mutable
       {
         multiple_buffer_sequence_op.do_complete(bytes_transferred, 
             ec);
