@@ -101,7 +101,9 @@ public:
       multiple_buffer_sequence_op const&& other)
   {
     buffer_sequence_ = std::move(other.buffer_sequence_);
+
     fixup_buffer_sequence_adapter();
+    
     endpoint_ = std::move(other.endpoint_);
     completed_ = std::move(other.completed_);
     flags_ = std::move(other.flags_);
@@ -126,7 +128,9 @@ public:
       multiple_buffer_sequence_op const& other)
   {
     buffer_sequence_ = other.buffer_sequence_;
+
     fixup_buffer_sequence_adapter();
+
     endpoint_ = other.endpoint_;
     completed_ = other.completed_;
     flags_ = other.flags_;
@@ -161,7 +165,9 @@ public:
   void reset() ASIO_NOEXCEPT
   {
     buffer_sequence_ = buffer_sequence_type();
+
     fixup_buffer_sequence_adapter();
+
     endpoint_ = endpoint_type();
     completed_ = false;
     flags_ = 0;
@@ -172,7 +178,9 @@ public:
   void reset(const buffer_sequence_type& _buffer_sequence) ASIO_NOEXCEPT
   {
     buffer_sequence_ = _buffer_sequence;
+
     fixup_buffer_sequence_adapter();
+
     endpoint_ = endpoint_type();
     completed_ = false;
     flags_ = 0;
@@ -184,7 +192,9 @@ public:
       const endpoint_type& _endpoint) ASIO_NOEXCEPT
   {
     buffer_sequence_ = _buffer_sequence;
+
     fixup_buffer_sequence_adapter();
+
     endpoint_ = _endpoint;
     completed_ = false;
     flags_ = 0;
@@ -223,6 +233,7 @@ public:
       ASIO_NOEXCEPT
   {
     buffer_sequence_ = _buffer_sequence;
+
     fixup_buffer_sequence_adapter();
   }
   
@@ -236,7 +247,7 @@ public:
     return endpoint_;
   }
   
-  void set_endpoint(const endpoint_type& _endpoint) const ASIO_NOEXCEPT
+  void set_endpoint(const endpoint_type& _endpoint)
   {
     endpoint_ = _endpoint;
   }
