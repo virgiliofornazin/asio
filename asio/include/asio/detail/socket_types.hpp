@@ -93,18 +93,30 @@
 
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 # if (defined(__MACH__) && defined(__APPLE__))
-#   define ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT struct msghdr_x
-#   define ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT_HDR_PTR(x) x
-#   define ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT_LEN(x) x.msg_datalen
-# endif
+   struct msghdr_x {
+    void *msg_name;	/* optional address */
+    socklen_t msg_namelen;	/* size of address */
+    struct iovec *msg_iov;	/* scatter/gather array */
+    int msg_iovlen;	/* # elements in msg_iov */
+    void *msg_control;	/* ancillary data, see below */
+    socklen_t msg_controllen;	/* ancillary data buffer len */
+    int msg_flags;	/* flags on received message */
+    size_t msg_datalen;	/* byte length of buffer in msg_iov */
+   };
+#  define ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT struct msghdr_x
+#  define ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT_HDR_PTR(x) x
+#  define ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT_LEN(x) x.msg_datalen
+# endif // (defined(__MACH__) && defined(__APPLE__))
 # if defined(__linux__) || defined(__FreeBSD__) \
    || defined(__NetBSD__) || defined(__OpenBSD__) \
    || defined(_AIX) || defined(__QNXNTO__)
 #   define ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT struct mmsghdr
 #   define ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT_HDR_PTR(x) x.msg_hdr
 #   define ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT_LEN(x) x.msg_len
-# endif
-#endif
+# endif // defined(__linux__) || defined(__FreeBSD__)
+      // || defined(__NetBSD__) || defined(__OpenBSD__)
+      // || defined(_AIX) || defined(__QNXNTO__)
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
 #include "asio/detail/push_options.hpp"
 

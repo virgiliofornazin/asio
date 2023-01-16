@@ -41,6 +41,12 @@
 #endif // defined(ASIO_WINDOWS) || defined(__CYGWIN__)
        // || defined(__MACH__) && defined(__APPLE__)
 
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+# if (defined(__MACH__) && defined(__APPLE__))
+#  include <sys/syscall.h>
+# endif // (defined(__MACH__) && defined(__APPLE__))
+#endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+
 #include "asio/detail/push_options.hpp"
 
 namespace asio {
@@ -1367,14 +1373,25 @@ bool non_blocking_recvmsg(socket_type s,
 
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
+#if (defined(__MACH__) && defined(__APPLE__))
+# include <sys/syscall.h>
+#endif
+
 ASIO_DECL signed_size_type recvmmsg(socket_type s, mbufs* bufs,
     size_t count, int flags, asio::error_code& ec)
 {
 #if defined(ASIO_HAS_MSG_NOSIGNAL)
   flags |= MSG_NOSIGNAL;
 #endif // defined(ASIO_HAS_MSG_NOSIGNAL)
+#if (defined(__MACH__) && defined(__APPLE__))
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations" 
+  signed_size_type result = ::syscall(SYS_recvmsg_x, s, bufs, count, flags);
+#pragma clang diagnostic pop
+#else // (defined(__MACH__) && defined(__APPLE__))
   flags |= MSG_WAITFORONE;
   signed_size_type result = ::recvmmsg(s, bufs, count, flags, nullptr);
+#endif // (defined(__MACH__) && defined(__APPLE__))
   get_last_error(ec, result < 0);
   return result;
 }
@@ -1450,7 +1467,8 @@ ASIO_DECL bool non_blocking_recvmmsg(socket_type s, mbufs* bufs, size_t count,
       bytes_transferred = 0;
       for (signed_size_type i = 0; i < operations; ++i)
       {
-        bytes_transferred += bufs[i].msg_len;
+        bytes_transferred +=
+            ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT_LEN(bufs[i]);
       }
       operations_executed = operations;
       return true;
@@ -1924,7 +1942,14 @@ ASIO_DECL signed_size_type sendmmsg(socket_type s,
 #if defined(ASIO_HAS_MSG_NOSIGNAL)
   flags |= MSG_NOSIGNAL;
 #endif // defined(ASIO_HAS_MSG_NOSIGNAL)
+#if (defined(__MACH__) && defined(__APPLE__))
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations" 
+  signed_size_type result = ::syscall(SYS_sendmsg_x, s, bufs, count, flags);
+#pragma clang diagnostic pop
+#else // (defined(__MACH__) && defined(__APPLE__))
   signed_size_type result = ::sendmmsg(s, bufs, count, flags);
+#endif // (defined(__MACH__) && defined(__APPLE__))
   get_last_error(ec, result < 0);
   return result;
 }
@@ -1986,7 +2011,8 @@ ASIO_DECL bool non_blocking_sendmmsg(socket_type s, mbufs* bufs,
       bytes_transferred = 0;
       for (signed_size_type i = 0; i < operations; ++i)
       {
-        bytes_transferred += bufs[i].msg_len;
+        bytes_transferred += 
+            ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT_LEN(bufs[i]);
       }
       operations_executed = operations;
       return true;

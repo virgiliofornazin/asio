@@ -1723,7 +1723,8 @@
 #  if (defined(__MACH__) && defined(__APPLE__))
 #   define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
 #   if !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
-#    define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO UIO_MAXIOV
+#    include <limits.h>
+#    define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO IOV_MAX
 #   endif // !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
 #  endif // (defined(__MACH__) && defined(__APPLE__))
 #  if defined(__linux__)
