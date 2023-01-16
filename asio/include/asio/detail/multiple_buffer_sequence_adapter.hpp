@@ -35,8 +35,7 @@ namespace detail {
 class base_multiple_buffer_sequence_adapter
 {
 public:
-#if defined(__linux__)
-  typedef struct mmsghdr native_multiple_buffer_type;
+  typedef ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT native_multiple_buffer_type;
 
   template <typename MultipleBufferSequence>
   void do_prepare_op(MultipleBufferSequence& source,
@@ -46,14 +45,16 @@ public:
         buffer_sequence_adapter = source.buffer_sequence_adapter();
     const typename MultipleBufferSequence::endpoint_type& endpoint = 
         source.endpoint();
-    socket_ops::init_msghdr_msg_name(destination.msg_hdr.msg_name,
-        endpoint.data());
-    destination.msg_hdr.msg_namelen = static_cast<int>(endpoint.size());
-    destination.msg_hdr.msg_iov = buffer_sequence_adapter.buffers();
-    destination.msg_hdr.msg_iovlen = buffer_sequence_adapter.count();
-    destination.msg_hdr.msg_control = NULL;
-    destination.msg_hdr.msg_controllen = 0;
-    destination.msg_hdr.msg_flags = 0;
+    auto& hdr = ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT_HDR_PTR(destination);
+    auto& len = ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT_LEN(destination);
+    socket_ops::init_msghdr_msg_name(hdr.msg_name, endpoint.data());
+    hdr.msg_namelen = static_cast<int>(endpoint.size());
+    hdr.msg_iov = buffer_sequence_adapter.buffers();
+    hdr.msg_iovlen = buffer_sequence_adapter.count();
+    hdr.msg_control = NULL;
+    hdr.msg_controllen = 0;
+    hdr.msg_flags = 0;
+    len = 0;
   }
 
   template <typename MultipleBufferSequence>
@@ -62,15 +63,15 @@ public:
   {
     typename MultipleBufferSequence::endpoint_type& endpoint = 
         destination.endpoint();
+    auto const& hdr = ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT_HDR_PTR(source);
+    auto const& len = ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT_LEN(source);
     if (!ec)
     {
-      endpoint.resize(source.msg_hdr.msg_namelen);
+      endpoint.resize(hdr.msg_namelen);
     }
-    destination.do_complete(
-        socket_base::message_flags(source.msg_hdr.msg_flags),
-        static_cast<std::size_t>(source.msg_len), ec);
+    destination.do_complete(socket_base::message_flags(hdr.msg_flags),
+        static_cast<std::size_t>(len), ec);
   }
-#endif // defined(__linux__)
 };
 
 // Helper class to translate buffers into the native multiple buffer

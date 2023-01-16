@@ -131,7 +131,7 @@ typedef iovec buf;
 #endif // defined(ASIO_WINDOWS) || defined(__CYGWIN__)
 
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-typedef struct mmsghdr mbufs;
+typedef ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT mbufs;
 #endif // defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 
 ASIO_DECL void init_buf(buf& b, void* data, size_t size);

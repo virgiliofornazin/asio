@@ -91,6 +91,21 @@
 # endif
 #endif
 
+#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
+# if (defined(__MACH__) && defined(__APPLE__))
+#   define ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT struct msghdr_x
+#   define ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT_HDR_PTR(x) x
+#   define ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT_LEN(x) x.msg_datalen
+# endif
+# if defined(__linux__) || defined(__FreeBSD__) \
+   || defined(__NetBSD__) || defined(__OpenBSD__) \
+   || defined(_AIX) || defined(__QNXNTO__)
+#   define ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT struct mmsghdr
+#   define ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT_HDR_PTR(x) x.msg_hdr
+#   define ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT_LEN(x) x.msg_len
+# endif
+#endif
+
 #include "asio/detail/push_options.hpp"
 
 namespace asio {

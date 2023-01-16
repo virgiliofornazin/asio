@@ -1706,7 +1706,9 @@
 #endif // !defined(ASIO_HAS_IO_URING_AS_DEFAULT)
 
 //
-// ASIO support for sendmmsg/recvmmsg support for operating systems listed below
+// ASIO support for multiple buffer sequences using native syscalls
+// sendmmsg/recvmmsg, sendmsg_x/recvmsg_x ... supporting the  operating 
+// systems listed below
 //
 // - Linux (with GNUlibc >= 2.12, using epoll, io_uring does not support it)
 // - FreeBSD 11
@@ -1714,9 +1716,16 @@
 // - OpenBSD 7.2
 // - AIX 7.2
 // - QNX 7.0
+// - NacOS
 //
 #if !defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
 # if !defined(ASIO_DISABLE_MULTIPLE_BUFFER_SEQUENCE_IO)
+#  if (defined(__MACH__) && defined(__APPLE__))
+#   define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
+#   if !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
+#    define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO UIO_MAXIOV
+#   endif // !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
+#  endif // (defined(__MACH__) && defined(__APPLE__))
 #  if defined(__linux__)
 #   if (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 12)
 #    if !defined(ASIO_HAS_IO_URING_AS_DEFAULT)
@@ -1731,43 +1740,43 @@
 #   include <sys/param.h>
 #   if defined(__FreeBSD_version) && (__FreeBSD_version >= 1100000)
 #    define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
-#     if !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
-#      define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
-#     endif // !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
+#    if !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
+#     define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
+#    endif // !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
 #   endif // defined(__FreeBSD_version) && (__FreeBSD_version >= 1100000)
 #  endif // defined(__FreeBSD__)
 #  if defined(__NetBSD__)
 #   include <sys/param.h>
 #   if defined(__NetBSD_Version__) && (__NetBSD_Version__  >= 700000000)
 #    define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
-#     if !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
-#      define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
-#     endif // !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
+#    if !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
+#     define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
+#    endif // !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
 #   endif // defined(__NetBSD_Version__) && (__NetBSD_Version__  >= 700000000)
 #  endif // defined(__NetBSD__)
 #  if defined(__OpenBSD__)
 #   include <sys/param.h>
 #   if defined(OpenBSD7_2)
 #    define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
-#     if !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
-#      define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
-#     endif // !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
+#    if !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
+#     define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
+#    endif // !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
 #   endif // defined(OpenBSD7_2)
 #  endif // defined(__OpenBSD__)
 #  if defined(_AIX)
 #   if defined(_AIX72)
 #    define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
-#     if !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
-#      define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
-#     endif // !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
+#    if !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
+#     define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
+#    endif // !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
 #   endif // defined(_AIX72)
 #  endif // defined(_AIX)
 #  if defined(__QNXNTO__)
 #   if (__QNXNTO__ >= 700)
 #    define ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO 1
-#     if !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
-#      define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
-#     endif // !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
+#    if !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
+#     define ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO 1024
+#    endif // !defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
 #   endif // (__QNXNTO__ >= 700)
 #  endif // defined(__QNXNTO__)
 # endif // !defined(ASIO_DISABLE_MULTIPLE_BUFFER_SEQUENCE_IO)
