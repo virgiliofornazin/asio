@@ -2178,6 +2178,10 @@
 # define ASIO_UNUSED_VARIABLE
 #endif // !defined(ASIO_UNUSED_VARIABLE)
 
+#if !defined(ASIO_UNUSED_PARAMETER)
+# define ASIO_UNUSED_PARAMETER(x) (void)x
+#endif // !defined(ASIO_UNUSED_PARAMETER)
+
 // Support the co_await keyword on compilers known to allow it.
 #if !defined(ASIO_HAS_CO_AWAIT)
 # if !defined(ASIO_DISABLE_CO_AWAIT)
