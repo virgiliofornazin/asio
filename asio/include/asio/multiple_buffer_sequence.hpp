@@ -33,172 +33,98 @@
 namespace asio {
 
 ASIO_CONSTEXPR static const std::size_t
-    multiple_buffer_sequence_maximum_operations_per_io = 1
+  multiple_buffer_sequence_maximum_operations_per_io = 1
 #if defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
-      * ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO
+  * ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO
 #endif // defined(ASIO_MULTIPLE_BUFFER_SEQUENCE_MAXIMUM_OPERATIONS_PER_IO)
 ;
 
-template <typename BufferSequence, typename EndpointType,
-    typename ContainerType>
+template <typename BufferSequence, typename EndpointType>
 class base_multiple_buffer_sequence
 {
 public:
-  typedef base_multiple_buffer_sequence<BufferSequence, EndpointType,
-      ContainerType> this_type;
-
   typedef BufferSequence buffer_sequence_type;
   typedef EndpointType endpoint_type;
-  typedef ContainerType container_type;
 
   typedef detail::multiple_buffer_sequence_op<buffer_sequence_type, 
-      endpoint_type> value_type;
+    endpoint_type> value_type;
 
 protected:
-#if defined(ASIO_HAS_STATIC_ASSERT)
-  typedef typename container_type::value_type container_value_type; 
-  
-  typedef typename container_value_type::buffer_sequence_type
-      container_buffer_sequence_type;
-  
-  typedef typename container_value_type::endpoint_type
-      container_endpoint_type;
+  std::size_t offset_ = 0;
+  std::size_t operations_executed_ = 0;
+  std::size_t bytes_transferred_ = 0;
 
-  static_assert(std::is_same<container_buffer_sequence_type,
-      buffer_sequence_type>::value, "Container buffer_sequence_type is not the "
-      "same as MultipleBufferSequence buffer_sequence_type");
-
-  static_assert(std::is_same<container_endpoint_type,
-      endpoint_type>::value, "Container endpoint_type is not the same as "
-      "MultipleBufferSequence buffer_sequence_type");
-
-  static_assert(std::is_same<container_value_type,
-      value_type>::value, "Container value_type is not the same as "
-      "MultipleBufferSequence value_type");
-#endif // defined(ASIO_HAS_STATIC_ASSERT)
-
-public:
-  typedef typename container_type::size_type size_type;
-  typedef typename container_type::reference reference;
-  typedef typename container_type::const_reference const_reference;
-  typedef typename container_type::pointer pointer;
-  typedef typename container_type::const_pointer const_pointer;
-  typedef typename container_type::iterator iterator;
-  typedef typename container_type::const_iterator const_iterator;
-  typedef typename container_type::reverse_iterator reverse_iterator;
-  typedef typename container_type::const_reverse_iterator
-      const_reverse_iterator;
-
-protected:
-  container_type container_;
-  std::size_t operations_executed_;
-  std::size_t bytes_transferred_;
-
-protected:
-  void throw_out_of_range() const
+protected: 
+  explicit base_multiple_buffer_sequence(std::size_t offset)
+    : offset_(offset)
   {
-    throw std::out_of_range(
-        "multiple buffer sequence size will be greather than maximum "
-        "supported operations per io");
   }
 
   void throw_empty() const
   {
     throw std::out_of_range(
-        "no operations were assigned in multiple buffer sequence");
+      "no operations were assigned in multiple buffer sequence");
   }
   
 public:
-  base_multiple_buffer_sequence()
-    : operations_executed_(0), bytes_transferred_(0)
-  {
-  }
+  base_multiple_buffer_sequence() = default;
 
-  base_multiple_buffer_sequence(const buffer_sequence_type& buffer_sequence)
-    : operations_executed_(0), bytes_transferred_(0)
-  {
-    push_back(buffer_sequence);
-  }
-
-  explicit base_multiple_buffer_sequence(
-      const buffer_sequence_type& buffer_sequence,
-      const endpoint_type& endpoint)
-    : operations_executed_(0), bytes_transferred_(0)      
-  {
-    push_back(buffer_sequence, endpoint);
-  }
-
-#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY)
-public:
-#else //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY)
-private:
-#endif //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_COPY)
-
-  base_multiple_buffer_sequence(base_multiple_buffer_sequence const& other)
-    : container_(other.begin(), other.end()), 
-      operations_executed_(other.operations_executed_),
-      bytes_transferred_(other.bytes_transferred_)
-  {
-  }
-
-  base_multiple_buffer_sequence& operator = (
-      base_multiple_buffer_sequence const& other)
-  {
-    container_ = other.container_;
-    operations_executed_ = other.operations_executed_;
-    bytes_transferred_ = other.bytes_transferred_;
-    return (*this);
-  }
-
-#if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_MOVE)
-public:
-#else //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_MOVE)
-private:
-#endif //  defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_CONTAINER_MOVE)
+  base_multiple_buffer_sequence(
+    base_multiple_buffer_sequence const&) = default;
   
+  base_multiple_buffer_sequence& operator = 
+    (base_multiple_buffer_sequence const&) = default;
+
 #if defined(ASIO_HAS_MOVE)
-
-  base_multiple_buffer_sequence(base_multiple_buffer_sequence&& other)
-    : container_(std::move(other)), 
-      operations_executed_(std::move(other.operations_executed_)),
-      bytes_transferred_(std::move(other.bytes_transferred_))
-  {
-  }
+  base_multiple_buffer_sequence(
+    base_multiple_buffer_sequence&&) = default;
   
-  base_multiple_buffer_sequence& operator = (
-      base_multiple_buffer_sequence&& other)
-  {
-    container_ = std::move(other.container_);
-    operations_executed_ = std::move(other.operations_executed_);
-    bytes_transferred_ = std::move(other.bytes_transferred_);
-    return (*this);
-  }
-
+  base_multiple_buffer_sequence& operator = 
+    (base_multiple_buffer_sequence&&) = default;
 #endif // defined(ASIO_HAS_MOVE)
+  
+  void throw_if_empty() const
+  {
+    if (empty())
+    {
+      throw_empty();
+    }
+  }
 
- public:
-  virtual ~base_multiple_buffer_sequence() ASIO_NOEXCEPT
+  virtual std::size_t size() const ASIO_NOEXCEPT = 0;
+
+  virtual bool empty() const ASIO_NOEXCEPT
   {
+    return size() <= 0;
   }
+
+  virtual value_type& at(std::size_t index) = 0;
   
-  size_type count() const ASIO_NOEXCEPT
+  virtual const value_type& at(std::size_t index) const = 0;
+
+  value_type& operator[](std::size_t index)
   {
-    return container_.size();
+    return at[index];
   }
-  
-  size_type total_size() const ASIO_NOEXCEPT
+
+  const value_type& operator[](std::size_t index) const
+  {
+    return at[index];
+  }
+
+  std::size_t total_size() const ASIO_NOEXCEPT
   {
     if (empty())
     {
       return 0;
     }
 
-    size_type result = 0;
-    size_type const op_count = count();
+    std::size_t result = 0;
+    std::size_t const op_count = size();
 
-    for (size_t i = 0; i < op_count; ++i)
+    for (std::size_t index = offset_; index < op_count; ++index)
     {
-      const_reference buffer_sequence = at(i);
+      const value_type& buffer_sequence = at(index);
 
       result += buffer_sequence.total_size();
     }
@@ -213,11 +139,11 @@ private:
       return true;
     }
 
-    size_type const op_count = count();
+    std::size_t const op_count = size();
 
-    for (size_t i = 0; i < op_count; ++i)
+    for (std::size_t index = offset_; index < op_count; ++index)
     {
-      const_reference buffer_sequence = at(i);
+      const value_type& buffer_sequence = at(index);
 
       if (!buffer_sequence.all_empty())
       {
@@ -230,47 +156,165 @@ private:
 
   void reset()
   {
-    size_type const op_count = count();
+    std::size_t const op_count = size();
 
-    for (size_t i = 0; i < op_count; ++i)
+    for (std::size_t index = 0; index < op_count; ++index)
     {
-      reference buffer_sequence = container_.at(i);
+      value_type& buffer_sequence = at(index);
 
       buffer_sequence.reset();
     }
   }
 
-  bool full() const ASIO_NOEXCEPT
+  std::size_t count() const ASIO_NOEXCEPT
   {
-    return (size() >= max_size());
+    return size();
   }
 
-  void throw_if_empty() const
+  std::size_t offset() const ASIO_NOEXCEPT
   {
-    if (empty())
-    {
-      throw_empty();
-    }
+    return offset_;
   }
 
-  reference at(size_type index)
+  std::size_t operations_executed() const ASIO_NOEXCEPT
+  {
+    return operations_executed_;
+  }
+
+  void set_operations_executed(std::size_t _operations_executed) ASIO_NOEXCEPT
+  {
+    operations_executed_ = _operations_executed;
+  }
+
+  std::size_t add_operations_executed(std::size_t _operations_executed = 1) ASIO_NOEXCEPT
+  {
+    std::size_t prev = operations_executed_;
+
+    operations_executed_ += _operations_executed;
+
+    return prev;
+  }
+
+  std::size_t bytes_transferred() const ASIO_NOEXCEPT
+  {
+    return bytes_transferred_;
+  }
+
+  void set_bytes_transferred(std::size_t _bytes_transferred) ASIO_NOEXCEPT
+  {
+    bytes_transferred_ = _bytes_transferred;
+  }
+
+  std::size_t add_bytes_transferred(std::size_t _bytes_transferred) ASIO_NOEXCEPT
+  {
+    std::size_t prev = bytes_transferred_;
+
+    bytes_transferred_ += _bytes_transferred;
+
+    return prev;
+  }
+};
+
+template <typename BufferSequence, typename EndpointType,
+  typename UnderlyingContainerType>
+class base_multiple_buffer_sequence_template
+  : public base_multiple_buffer_sequence<BufferSequence, EndpointType>
+{
+public:
+  typedef base_multiple_buffer_sequence<BufferSequence, EndpointType>
+    base_type;
+
+  typedef typename base_type::buffer_sequence_type buffer_sequence_type;
+  typedef typename base_type::endpoint_type endpoint_type;
+  typedef typename base_type::value_type value_type;
+
+  typedef UnderlyingContainerType container_type;
+
+protected:
+#if defined(ASIO_HAS_STATIC_ASSERT)
+  typedef typename container_type::value_type container_value_type; 
+  
+  typedef typename container_value_type::buffer_sequence_type
+    container_buffer_sequence_type;
+  
+  typedef typename container_value_type::endpoint_type
+    container_endpoint_type;
+
+  static_assert(std::is_same<container_buffer_sequence_type,
+    buffer_sequence_type>::value, "Container buffer_sequence_type is not the "
+      "same as MultipleBufferSequence buffer_sequence_type");
+
+  static_assert(std::is_same<container_endpoint_type,
+    endpoint_type>::value, "Container endpoint_type is not the same as "
+      "MultipleBufferSequence buffer_sequence_type");
+
+  static_assert(std::is_same<container_value_type,
+    value_type>::value, "Container value_type is not the same as "
+      "MultipleBufferSequence value_type");
+#endif // defined(ASIO_HAS_STATIC_ASSERT)
+
+public:
+  typedef typename container_type::size_type size_type;
+  typedef typename container_type::reference reference;
+  typedef typename container_type::const_reference const_reference;
+  typedef typename container_type::pointer pointer;
+  typedef typename container_type::const_pointer const_pointer;
+  typedef typename container_type::iterator iterator;
+  typedef typename container_type::const_iterator const_iterator;
+  typedef typename container_type::reverse_iterator reverse_iterator;
+  typedef typename container_type::const_reverse_iterator
+    const_reverse_iterator;
+
+protected:
+  container_type container_;
+
+protected:
+  template <typename ReferenceContainer>
+  explicit base_multiple_buffer_sequence_template(std::size_t offset,
+    ReferenceContainer& reference_container)
+    : base_type(offset), container_(reference_container)
+  {
+  }
+  
+public:
+  base_multiple_buffer_sequence_template() = default;
+
+  base_multiple_buffer_sequence_template(
+    base_multiple_buffer_sequence_template const&) = default;
+  
+  base_multiple_buffer_sequence_template& operator = 
+    (base_multiple_buffer_sequence_template const&) = default;
+
+#if defined(ASIO_HAS_MOVE)
+  base_multiple_buffer_sequence_template(
+    base_multiple_buffer_sequence_template&&) = default;
+  
+  base_multiple_buffer_sequence_template& operator = 
+    (base_multiple_buffer_sequence_template&&) = default;
+#endif // defined(ASIO_HAS_MOVE)
+
+  virtual ~base_multiple_buffer_sequence_template() ASIO_NOEXCEPT
+  {
+  }
+
+  virtual std::size_t size() const ASIO_NOEXCEPT override
+  {
+    return container_.size();
+  }
+
+  virtual bool empty() const ASIO_NOEXCEPT override
+  {
+    return container_.empty();
+  }
+
+  virtual value_type& at(std::size_t index) override
   {
     return container_.at(index);
   }
 
-  const_reference at(size_type index) const
+  virtual const value_type& at(std::size_t index) const override
   {
     return container_.at(index);
-  }
-
-  reference operator[](std::size_t index)
-  {
-    return container_[index];
-  }
-
-  const_reference operator[](std::size_t index) const
-  {
-    return container_[index];
   }
 
   reference front()
@@ -362,83 +406,19 @@ private:
   {
     return container_.crend();
   }
-
-  bool empty() const ASIO_NOEXCEPT
-  {
-    return container_.empty();
-  }
-
-  size_type size() const ASIO_NOEXCEPT
-  {
-    return container_.size();
-  }
-
-  size_type max_size() const ASIO_NOEXCEPT
-  {
-    return multiple_buffer_sequence_maximum_operations_per_io;
-  }
-
-  void swap(base_multiple_buffer_sequence<BufferSequence, EndpointType, 
-      ContainerType>& other)
-  {
-    std::swap(container_, other.container_);
-    std::swap(operations_executed_, other.operations_executed_);
-    std::swap(bytes_transferred_, other.bytes_transferred_);
-  }
-
-  std::size_t operations_executed() const ASIO_NOEXCEPT
-  {
-    return operations_executed_;
-  }
-
-  void set_operations_executed(std::size_t _operations_executed) ASIO_NOEXCEPT
-  {
-    operations_executed_ = _operations_executed;
-  }
-
-  std::size_t add_operations_executed(std::size_t _operations_executed = 1) ASIO_NOEXCEPT
-  {
-    std::size_t prev = operations_executed_;
-
-    operations_executed_ += _operations_executed;
-
-    return prev;
-  }
-
-  std::size_t bytes_transferred() const ASIO_NOEXCEPT
-  {
-    return bytes_transferred_;
-  }
-
-  void set_bytes_transferred(std::size_t _bytes_transferred) ASIO_NOEXCEPT
-  {
-    bytes_transferred_ = _bytes_transferred;
-  }
-
-  std::size_t add_bytes_transferred(std::size_t _bytes_transferred) ASIO_NOEXCEPT
-  {
-    std::size_t prev = bytes_transferred_;
-
-    bytes_transferred_ += _bytes_transferred;
-
-    return prev;
-  }
 };
 
 template <typename BufferSequence, typename EndpointType, 
-    std::size_t BufferSequenceCount>
+  std::size_t BufferSequenceCount>
 class fixed_size_multiple_buffer_sequence
-  : public base_multiple_buffer_sequence<BufferSequence, EndpointType,
-  detail::array<detail::multiple_buffer_sequence_op<BufferSequence, EndpointType>, 
-    BufferSequenceCount>>
+  : public base_multiple_buffer_sequence_template<BufferSequence,
+    EndpointType, detail::array<detail::multiple_buffer_sequence_op<
+    BufferSequence, EndpointType>, BufferSequenceCount>>
 {
 public:
-  typedef fixed_size_multiple_buffer_sequence<BufferSequence, EndpointType,
-      BufferSequenceCount> this_type;
-
-  typedef base_multiple_buffer_sequence<BufferSequence, EndpointType,
-      detail::array<detail::multiple_buffer_sequence_op<BufferSequence,
-      EndpointType>, BufferSequenceCount>> base_type;
+  typedef base_multiple_buffer_sequence_template<BufferSequence,
+    EndpointType, detail::array<detail::multiple_buffer_sequence_op<
+    BufferSequence, EndpointType>, BufferSequenceCount>> base_type;
 
   typedef typename base_type::buffer_sequence_type buffer_sequence_type;
   typedef typename base_type::endpoint_type endpoint_type;
@@ -453,36 +433,67 @@ public:
   typedef typename base_type::const_iterator const_iterator;
   typedef typename base_type::reverse_iterator reverse_iterator;
   typedef typename base_type::const_reverse_iterator const_reverse_iterator;
+
+public:
+  fixed_size_multiple_buffer_sequence() = default;
+
+  fixed_size_multiple_buffer_sequence(
+    const fixed_size_multiple_buffer_sequence&) = delete;
+
+  fixed_size_multiple_buffer_sequence& operator = (
+    const fixed_size_multiple_buffer_sequence&) = delete;
+
+#if defined(ASIO_HAS_MOVE)
+  fixed_size_multiple_buffer_sequence(
+    fixed_size_multiple_buffer_sequence&&) = default;
+
+  fixed_size_multiple_buffer_sequence& operator = (
+    fixed_size_multiple_buffer_sequence&&) = default;
+#endif // defined(ASIO_HAS_MOVE)
+
+  explicit fixed_size_multiple_buffer_sequence(
+    const buffer_sequence_type& buffer_sequence)
+    : base_type()
+  {
+    this->at(0) = detail::multiple_buffer_sequence_op(buffer_sequence);
+  }
+
+  explicit fixed_size_multiple_buffer_sequence(
+    const buffer_sequence_type& buffer_sequence,
+    const endpoint_type& endpoint)
+    : base_type()
+  {
+    this->at(0) = detail::multiple_buffer_sequence_op(buffer_sequence, endpoint);
+  }
 };
 
 template <typename BufferSequence, typename EndpointType>
 static inline fixed_size_multiple_buffer_sequence<BufferSequence, EndpointType,
-    1> make_fixed_size_multiple_buffer_sequence(
-        const BufferSequence& buffer_sequence, const EndpointType& endpoint)
+  1> make_fixed_size_multiple_buffer_sequence(
+    const BufferSequence& buffer_sequence, const EndpointType& endpoint)
 {
   return fixed_size_multiple_buffer_sequence<BufferSequence, EndpointType, 1>(
     buffer_sequence, endpoint);
 };
 
 template <typename BufferSequence, typename EndpointType,
-    typename BufferSequenceContainerAllocatorType = std::allocator<
-    detail::multiple_buffer_sequence_op<BufferSequence, EndpointType>>>
+  typename ContainerAllocatorType = std::allocator<
+  detail::multiple_buffer_sequence_op<BufferSequence, EndpointType>>>
 class resizeable_multiple_buffer_sequence
-  : public base_multiple_buffer_sequence<BufferSequence, EndpointType,
-  std::vector<detail::multiple_buffer_sequence_op<BufferSequence, 
-    EndpointType>, BufferSequenceContainerAllocatorType>>
+  : public base_multiple_buffer_sequence_template<BufferSequence,
+    EndpointType, std::vector<detail::multiple_buffer_sequence_op<
+    BufferSequence, EndpointType>, ContainerAllocatorType>>
 {
 public:
-  typedef resizeable_multiple_buffer_sequence<BufferSequence, EndpointType,
-      BufferSequenceContainerAllocatorType> this_type;
-
-  typedef base_multiple_buffer_sequence<BufferSequence, EndpointType,
-      std::vector<detail::multiple_buffer_sequence_op<BufferSequence, 
-      EndpointType>, BufferSequenceContainerAllocatorType>> base_type;
+  typedef base_multiple_buffer_sequence_template<BufferSequence,
+    EndpointType, std::vector<detail::multiple_buffer_sequence_op<
+    BufferSequence, EndpointType>, ContainerAllocatorType>> base_type;
 
   typedef typename base_type::buffer_sequence_type buffer_sequence_type;
   typedef typename base_type::endpoint_type endpoint_type;
   typedef typename base_type::value_type value_type;
+
+  typedef ContainerAllocatorType container_allocator_type;
 
   typedef typename base_type::size_type size_type;
   typedef typename base_type::reference reference;
@@ -494,12 +505,51 @@ public:
   typedef typename base_type::reverse_iterator reverse_iterator;
   typedef typename base_type::const_reverse_iterator const_reverse_iterator;
 
+protected:
+  void throw_out_of_range() const
+  {
+    throw std::out_of_range(
+        "multiple buffer sequence size will be greather than maximum "
+        "supported operations per io");
+  }
+
 public:
+  resizeable_multiple_buffer_sequence() = default;
+
+  resizeable_multiple_buffer_sequence(
+    const resizeable_multiple_buffer_sequence&) = delete;
+
+  resizeable_multiple_buffer_sequence& operator = (
+    const resizeable_multiple_buffer_sequence&) = delete;
+
+#if defined(ASIO_HAS_MOVE)
+  resizeable_multiple_buffer_sequence(
+    resizeable_multiple_buffer_sequence&&) = default;
+
+  resizeable_multiple_buffer_sequence& operator = (
+    resizeable_multiple_buffer_sequence&&) = default;
+#endif // defined(ASIO_HAS_MOVE)
+
+  explicit resizeable_multiple_buffer_sequence(
+    const buffer_sequence_type& buffer_sequence)
+    : base_type()
+  {
+    push_back(buffer_sequence);
+  }
+
+  explicit resizeable_multiple_buffer_sequence(
+    const buffer_sequence_type& buffer_sequence,
+    const endpoint_type& endpoint)
+    : base_type()
+  {
+    push_back(buffer_sequence, endpoint);
+  }
+
   void throw_if_overflow(size_type new_size) const
   {
     if (new_size > multiple_buffer_sequence_maximum_operations_per_io)
     {
-      this->throw_out_of_range();
+      throw_out_of_range();
     }
   }
 
@@ -507,10 +557,10 @@ public:
   {
     if (this->size() == multiple_buffer_sequence_maximum_operations_per_io)
     {
-      this->throw_out_of_range();
+      throw_out_of_range();
     }
   }
-
+  
   void reserve(size_type count)
   {
     throw_if_overflow(count);
@@ -636,6 +686,91 @@ public:
 
     this->container_.resize(count);
   }
+  
+  size_type max_size() const ASIO_NOEXCEPT
+  {
+    return multiple_buffer_sequence_maximum_operations_per_io;
+  }
+
+  bool full() const ASIO_NOEXCEPT
+  {
+    return (this->size() >= max_size());
+  }
+  
+  void swap(base_type& other)
+  {
+    std::swap(this->container_, other.container_);
+    std::swap(this->offset_, other.offset_);
+    std::swap(this->operations_executed_, other.operations_executed_);
+    std::swap(this->bytes_transferred_, other.bytes_transferred_);
+  }
+};
+
+template <typename MultipleBufferSequence>
+class multiple_buffer_sequence_view
+  : public base_multiple_buffer_sequence_template<typename
+  MultipleBufferSequence::buffer_sequence_type, typename
+  MultipleBufferSequence::endpoint_type, MultipleBufferSequence&>
+{
+public:
+  typedef base_multiple_buffer_sequence_template<typename
+  MultipleBufferSequence::BufferSequence, typename
+  MultipleBufferSequence::EndpointType, MultipleBufferSequence&> base_type;
+
+  typedef MultipleBufferSequence multiple_buffer_sequence_type;
+
+  typedef typename base_type::buffer_sequence_type buffer_sequence_type;
+  typedef typename base_type::endpoint_type endpoint_type;
+  typedef typename base_type::value_type value_type;
+
+  typedef typename base_type::size_type size_type;
+  typedef typename base_type::reference reference;
+  typedef typename base_type::const_reference const_reference;
+  typedef typename base_type::pointer pointer;
+  typedef typename base_type::const_pointer const_pointer;
+  typedef typename base_type::iterator iterator;
+  typedef typename base_type::const_iterator const_iterator;
+  typedef typename base_type::reverse_iterator reverse_iterator;
+  typedef typename base_type::const_reverse_iterator const_reverse_iterator;
+
+public:
+  multiple_buffer_sequence_view() = delete;
+
+  explicit multiple_buffer_sequence_view(std::size_t offset, 
+    multiple_buffer_sequence_type& multiple_buffer_sequence)
+    : base_type(offset, multiple_buffer_sequence)
+  {
+  }
+
+  multiple_buffer_sequence_view(
+    const multiple_buffer_sequence_view&) = default;
+
+  multiple_buffer_sequence_view& operator = (
+    const multiple_buffer_sequence_view&) = default;
+
+#if defined(ASIO_HAS_MOVE)
+  multiple_buffer_sequence_view(
+    multiple_buffer_sequence_view&&) = default;
+
+  multiple_buffer_sequence_view& operator = (
+    multiple_buffer_sequence_view&&) = default;
+#endif // defined(ASIO_HAS_MOVE)
+};
+
+template <typename MultipleBufferSequence>
+static inline multiple_buffer_sequence_view<MultipleBufferSequence>
+  make_multiple_buffer_sequence_view(std::size_t offset,
+    MultipleBufferSequence& sequence)
+{
+  return multiple_buffer_sequence_view<MultipleBufferSequence>(sequence);
+};
+
+template <typename MultipleBufferSequence>
+static inline multiple_buffer_sequence_view<const MultipleBufferSequence>
+  make_multiple_buffer_sequence_view(std::size_t offset,
+    const MultipleBufferSequence& sequence)
+{
+  return multiple_buffer_sequence_view<const MultipleBufferSequence>(sequence);
 };
 
 } // namespace asio

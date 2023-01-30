@@ -34,7 +34,7 @@ namespace detail {
 // representation.
 class base_multiple_buffer_sequence_adapter
 {
-public:
+protected:
   typedef ASIO_MULTIPLE_BUFFER_SEQUENCE_STRUCT native_multiple_buffer_type;
 
   template <typename MultipleBufferSequence>
@@ -147,14 +147,17 @@ public:
   {
     return multiple_buffer_sequence_.bytes_transferred();
   }
-
-  void do_prepare()
+  
+  void do_prepare_at(std::size_t offset)
   {
-    std::size_t const count_op = multiple_buffer_sequence_.size();
+    if (offset >= multiple_buffer_sequence_.size()) {
+      throw std::out_of_range("offset not less than operations count");
+    }
+    std::size_t count_op = multiple_buffer_sequence_.size() - offset;
     native_multiple_buffer_type_container_.resize(count_op);
     for (std::size_t i = 0; i < count_op; ++i)
     {
-      reference asio_multiple_buffer_sequence = multiple_buffer_sequence_.at(i);
+      reference asio_multiple_buffer_sequence = multiple_buffer_sequence_.at(i + offset);
       native_reference native_multiple_buffer_sequence =
           native_multiple_buffer_type_container_.at(i);
       this->do_prepare_op(asio_multiple_buffer_sequence, 
@@ -164,14 +167,22 @@ public:
     multiple_buffer_sequence_.set_bytes_transferred(0);
   }
 
-  void do_complete(std::size_t operations_executed,
+  void do_prepare()
+  {
+    do_prepare_at(0);
+  }
+
+  void do_complete_at(std::size_t offset, std::size_t operations_executed,
       const asio::error_code& ec)
   {
+    if (offset >= multiple_buffer_sequence_.size()) {
+      throw std::out_of_range("offset not less than operations count");
+    }
+    std::size_t count_op = multiple_buffer_sequence_.size() - offset;
     std::size_t bytes_transferred = 0;
-    std::size_t const count_op = multiple_buffer_sequence_.size();
     for (std::size_t i = 0; i < count_op; ++i)
     {
-      reference asio_multiple_buffer_sequence = multiple_buffer_sequence_.at(i);
+      reference asio_multiple_buffer_sequence = multiple_buffer_sequence_.at(i + offset);
       native_reference native_multiple_buffer_sequence =
           native_multiple_buffer_type_container_.at(i);
       this->do_complete_op(native_multiple_buffer_sequence, 
@@ -182,20 +193,25 @@ public:
     multiple_buffer_sequence_.set_bytes_transferred(bytes_transferred);
   }
 
+  void do_complete(std::size_t operations_executed,
+      const asio::error_code& ec)
+  {
+    do_complete_at(0, operations_executed, ec);
+  }
+
+  void do_complete_at(std::size_t offset, std::size_t operations_executed, 
+      std::size_t bytes_transferred, const asio::error_code& ec)
+  {
+    do_complete_at(offset, operations_executed, ec);
+    if (multiple_buffer_sequence_.bytes_transferred() != bytes_transferred) {
+      throw std::logic_error("bytes_transferred mismatch");
+    }
+  }
+
   void do_complete(std::size_t operations_executed, 
       std::size_t bytes_transferred, const asio::error_code& ec)
   {
-    std::size_t const count_op = multiple_buffer_sequence_.size();
-    for (std::size_t i = 0; i < count_op; ++i)
-    {
-      reference asio_multiple_buffer_sequence = multiple_buffer_sequence_.at(i);
-      native_reference native_multiple_buffer_sequence =
-          native_multiple_buffer_type_container_.at(i);
-      this->do_complete_op(native_multiple_buffer_sequence, 
-          asio_multiple_buffer_sequence, ec);
-    }
-    multiple_buffer_sequence_.set_operations_executed(operations_executed);
-    multiple_buffer_sequence_.set_bytes_transferred(bytes_transferred);
+    do_complete_at(0, operations_executed, bytes_transferred, ec);
   }
 };
 
