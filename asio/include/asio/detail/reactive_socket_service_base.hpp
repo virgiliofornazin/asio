@@ -285,7 +285,7 @@ public:
         mbufs.native_buffers(), mbufs.native_buffer_size(), flags,
         mbufs.all_empty(), ec);
 
-    mbufs.do_complete(result, ec);
+    mbufs.do_complete_at(mbufs.offset(), result, ec);
 
     return result;
   }
@@ -654,7 +654,7 @@ public:
         mbufs.native_buffers(), mbufs.native_buffer_size(), flags, 
         ec);
 
-    mbufs.do_complete(result, ec);
+    mbufs.do_complete_at(mbufs.offset(), result, ec);
 
     return result;
   }

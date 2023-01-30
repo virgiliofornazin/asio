@@ -27,6 +27,11 @@
 #include <iterator>
 #include <array>
 #include <vector>
+#if defined(ASIO_STANDALONE)
+#include <type_traits>
+#else // defined(ASIO_STANDALONE)
+#include <boost/type_traits.hpp>
+#endif // defined(ASIO_STANDALONE)
 
 #include "asio/detail/push_options.hpp"
 
@@ -104,12 +109,12 @@ public:
 
   value_type& operator[](std::size_t index)
   {
-    return at[index];
+    return at(index);
   }
 
   const value_type& operator[](std::size_t index) const
   {
-    return at[index];
+    return at(index);
   }
 
   std::size_t total_size() const ASIO_NOEXCEPT
@@ -216,7 +221,7 @@ public:
 };
 
 template <typename BufferSequence, typename EndpointType,
-  typename UnderlyingContainerType>
+  typename ContainerType>
 class base_multiple_buffer_sequence_template
   : public base_multiple_buffer_sequence<BufferSequence, EndpointType>
 {
@@ -228,11 +233,19 @@ public:
   typedef typename base_type::endpoint_type endpoint_type;
   typedef typename base_type::value_type value_type;
 
-  typedef UnderlyingContainerType container_type;
+  typedef ContainerType container_type;
+
+#if defined(ASIO_STANDALONE)
+  typedef typename std::remove_const<typename std::remove_reference<
+    ContainerType>::type>::type raw_container_type;
+#else // defined(ASIO_STANDALONE)
+  typedef typename boost::remove_const<typename boost::remove_reference<
+    ContainerType>::type>::type raw_container_type;
+#endif // defined(ASIO_STANDALONE)
 
 protected:
 #if defined(ASIO_HAS_STATIC_ASSERT)
-  typedef typename container_type::value_type container_value_type; 
+  typedef typename raw_container_type::value_type container_value_type; 
   
   typedef typename container_value_type::buffer_sequence_type
     container_buffer_sequence_type;
@@ -254,15 +267,15 @@ protected:
 #endif // defined(ASIO_HAS_STATIC_ASSERT)
 
 public:
-  typedef typename container_type::size_type size_type;
-  typedef typename container_type::reference reference;
-  typedef typename container_type::const_reference const_reference;
-  typedef typename container_type::pointer pointer;
-  typedef typename container_type::const_pointer const_pointer;
-  typedef typename container_type::iterator iterator;
-  typedef typename container_type::const_iterator const_iterator;
-  typedef typename container_type::reverse_iterator reverse_iterator;
-  typedef typename container_type::const_reverse_iterator
+  typedef typename raw_container_type::size_type size_type;
+  typedef typename raw_container_type::reference reference;
+  typedef typename raw_container_type::const_reference const_reference;
+  typedef typename raw_container_type::pointer pointer;
+  typedef typename raw_container_type::const_pointer const_pointer;
+  typedef typename raw_container_type::iterator iterator;
+  typedef typename raw_container_type::const_iterator const_iterator;
+  typedef typename raw_container_type::reverse_iterator reverse_iterator;
+  typedef typename raw_container_type::const_reverse_iterator
     const_reverse_iterator;
 
 protected:
@@ -714,24 +727,29 @@ class multiple_buffer_sequence_view
 {
 public:
   typedef base_multiple_buffer_sequence_template<typename
-  MultipleBufferSequence::BufferSequence, typename
-  MultipleBufferSequence::EndpointType, MultipleBufferSequence&> base_type;
+    MultipleBufferSequence::buffer_sequence_type, typename
+    MultipleBufferSequence::endpoint_type, MultipleBufferSequence&> base_type;
 
   typedef MultipleBufferSequence multiple_buffer_sequence_type;
 
-  typedef typename base_type::buffer_sequence_type buffer_sequence_type;
-  typedef typename base_type::endpoint_type endpoint_type;
-  typedef typename base_type::value_type value_type;
+  typedef typename multiple_buffer_sequence_type::buffer_sequence_type
+    buffer_sequence_type;
+  typedef typename multiple_buffer_sequence_type::endpoint_type endpoint_type;
+  typedef typename multiple_buffer_sequence_type::value_type value_type;
 
-  typedef typename base_type::size_type size_type;
-  typedef typename base_type::reference reference;
-  typedef typename base_type::const_reference const_reference;
-  typedef typename base_type::pointer pointer;
-  typedef typename base_type::const_pointer const_pointer;
-  typedef typename base_type::iterator iterator;
-  typedef typename base_type::const_iterator const_iterator;
-  typedef typename base_type::reverse_iterator reverse_iterator;
-  typedef typename base_type::const_reverse_iterator const_reverse_iterator;
+  typedef typename multiple_buffer_sequence_type::size_type size_type;
+  typedef typename multiple_buffer_sequence_type::reference reference;
+  typedef typename multiple_buffer_sequence_type::const_reference
+    const_reference;
+  typedef typename multiple_buffer_sequence_type::pointer pointer;
+  typedef typename multiple_buffer_sequence_type::const_pointer const_pointer;
+  typedef typename multiple_buffer_sequence_type::iterator iterator;
+  typedef typename multiple_buffer_sequence_type::const_iterator
+    const_iterator;
+  typedef typename multiple_buffer_sequence_type::reverse_iterator
+    reverse_iterator;
+  typedef typename multiple_buffer_sequence_type::const_reverse_iterator
+    const_reverse_iterator;
 
 public:
   multiple_buffer_sequence_view() = delete;
@@ -762,7 +780,8 @@ static inline multiple_buffer_sequence_view<MultipleBufferSequence>
   make_multiple_buffer_sequence_view(std::size_t offset,
     MultipleBufferSequence& sequence)
 {
-  return multiple_buffer_sequence_view<MultipleBufferSequence>(sequence);
+  return multiple_buffer_sequence_view<MultipleBufferSequence>(offset,
+    sequence);
 };
 
 template <typename MultipleBufferSequence>
@@ -770,7 +789,8 @@ static inline multiple_buffer_sequence_view<const MultipleBufferSequence>
   make_multiple_buffer_sequence_view(std::size_t offset,
     const MultipleBufferSequence& sequence)
 {
-  return multiple_buffer_sequence_view<const MultipleBufferSequence>(sequence);
+  return multiple_buffer_sequence_view<const MultipleBufferSequence>(offset,
+    sequence);
 };
 
 } // namespace asio

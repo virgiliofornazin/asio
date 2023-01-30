@@ -69,7 +69,8 @@ public:
         o->bytes_transferred_, o->operations_executed_)
         ? done : not_done;
 
-    mbufs.do_complete(o->operations_executed_, o->bytes_transferred_, o->ec_);
+    mbufs.do_complete_at(mbufs.offset(), o->operations_executed_,
+        o->bytes_transferred_, o->ec_);
 
     if (result == done)
       if ((o->state_ & socket_ops::stream_oriented) != 0)

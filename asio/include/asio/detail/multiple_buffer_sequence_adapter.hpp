@@ -87,7 +87,16 @@ public:
   typedef native_multiple_buffer_type& native_reference;
 
   typedef MultipleBufferSequence multiple_buffer_sequence_type;
-  typedef typename multiple_buffer_sequence_type::reference reference;
+
+#if defined(ASIO_STANDALONE)
+  typedef typename std::remove_const<typename std::remove_reference<
+    MultipleBufferSequence>::type>::type raw_multiple_buffer_sequence_type;
+#else // defined(ASIO_STANDALONE)
+  typedef typename boost::remove_const<typename boost::remove_reference<
+    MultipleBufferSequence>::type>::type raw_multiple_buffer_sequence_type;
+#endif // defined(ASIO_STANDALONE)
+
+  typedef typename raw_multiple_buffer_sequence_type::reference reference;
   
 private:
   // TODO-MBS: specialize native_multiple_buffer_type in asio::detail::array 
@@ -105,7 +114,7 @@ public:
       multiple_buffer_sequence_type& _multiple_buffer_sequence)
     : multiple_buffer_sequence_(_multiple_buffer_sequence)
   {
-    do_prepare();
+    do_prepare_at(offset());
   }
 
   native_multiple_buffer_type* native_buffers()
@@ -113,14 +122,24 @@ public:
     return native_multiple_buffer_type_container_.data();
   }
 
-  std::size_t native_buffer_size() const ASIO_NOEXCEPT
+  std::size_t offset() const ASIO_NOEXCEPT
   {
-    return native_multiple_buffer_type_container_.size();
+    return multiple_buffer_sequence_.offset();
   }
 
   std::size_t count() const ASIO_NOEXCEPT
   {
     return multiple_buffer_sequence_.count();
+  }
+
+  std::size_t native_buffer_size() const ASIO_NOEXCEPT
+  {
+    return native_multiple_buffer_type_container_.size();
+  }
+
+  std::size_t size() const ASIO_NOEXCEPT
+  {
+    return multiple_buffer_sequence_.size();
   }
 
   std::size_t total_size() const ASIO_NOEXCEPT
@@ -169,7 +188,7 @@ public:
 
   void do_prepare()
   {
-    do_prepare_at(0);
+    do_prepare_at(offset());
   }
 
   void do_complete_at(std::size_t offset, std::size_t operations_executed,
@@ -196,7 +215,7 @@ public:
   void do_complete(std::size_t operations_executed,
       const asio::error_code& ec)
   {
-    do_complete_at(0, operations_executed, ec);
+    do_complete_at(offset(), operations_executed, ec);
   }
 
   void do_complete_at(std::size_t offset, std::size_t operations_executed, 
@@ -211,7 +230,7 @@ public:
   void do_complete(std::size_t operations_executed, 
       std::size_t bytes_transferred, const asio::error_code& ec)
   {
-    do_complete_at(0, operations_executed, bytes_transferred, ec);
+    do_complete_at(offset(), operations_executed, bytes_transferred, ec);
   }
 };
 
