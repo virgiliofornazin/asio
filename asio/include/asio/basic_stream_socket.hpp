@@ -402,7 +402,7 @@ public:
   {
     multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (multiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.adjusted_count() > 1)
     {
       asio::error_code ec;
       std::size_t s = this->impl_.get_service().send_multiple_buffer_sequence(
@@ -415,14 +415,11 @@ public:
     // send_multiple_buffer_sequence...
     std::size_t operations_executed = 0;
     std::size_t total_bytes_transferred = 0;
-    typename MultipleBufferSequence::iterator iterator =
-        multiple_buffer_sequence.begin();
-    typename MultipleBufferSequence::iterator end =
-        multiple_buffer_sequence.end();
-    while (iterator != end)
+    for (std::size_t index = multiple_buffer_sequence.offset(); index < 
+      multiple_buffer_sequence.count(); ++index)
     {
       typename MultipleBufferSequence::value_type&
-          multiple_buffer_sequence_op = *iterator;
+          multiple_buffer_sequence_op = multiple_buffer_sequence.at(index);
       const typename MultipleBufferSequence::buffer_sequence_type&
           buffer_sequence = multiple_buffer_sequence_op.
           buffer_sequence();
@@ -437,7 +434,6 @@ public:
       }
       ++operations_executed;
       total_bytes_transferred += bytes_transferred;
-      ++iterator;
     }
     multiple_buffer_sequence.set_operations_executed(operations_executed);
     multiple_buffer_sequence.set_bytes_transferred(total_bytes_transferred);
@@ -509,7 +505,7 @@ public:
   {
     multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (multiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.adjusted_count() > 1)
     {
       asio::error_code ec;
       std::size_t s = this->impl_.get_service().send_multiple_buffer_sequence(
@@ -523,14 +519,11 @@ public:
     // send_multiple_buffer_sequence...
     std::size_t operations_executed = 0;
     std::size_t total_bytes_transferred = 0;
-    typename MultipleBufferSequence::iterator iterator =
-        multiple_buffer_sequence.begin();
-    typename MultipleBufferSequence::iterator end =
-        multiple_buffer_sequence.end();
-    while (iterator != end)
+    for (std::size_t index = multiple_buffer_sequence.offset(); index < 
+      multiple_buffer_sequence.count(); ++index)
     {
       typename MultipleBufferSequence::value_type&
-          multiple_buffer_sequence_op = *iterator;
+          multiple_buffer_sequence_op = multiple_buffer_sequence.at(index);
       const typename MultipleBufferSequence::buffer_sequence_type&
           buffer_sequence = multiple_buffer_sequence_op.
           buffer_sequence();
@@ -545,7 +538,6 @@ public:
       }
       ++operations_executed;
       total_bytes_transferred += bytes_transferred;
-      ++iterator;
     }
     multiple_buffer_sequence.set_operations_executed(operations_executed);
     multiple_buffer_sequence.set_bytes_transferred(total_bytes_transferred);
@@ -604,7 +596,7 @@ public:
   {
     multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (multiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.adjusted_count() > 1)
     {
       return this->impl_.get_service().send_multiple_buffer_sequence(
         this->impl_.get_implementation(), multiple_buffer_sequence, flags, ec);
@@ -614,14 +606,11 @@ public:
     // send_multiple_buffer_sequence...
     std::size_t operations_executed = 0;
     std::size_t total_bytes_transferred = 0;
-    typename MultipleBufferSequence::iterator iterator =
-        multiple_buffer_sequence.begin();
-    typename MultipleBufferSequence::iterator end =
-        multiple_buffer_sequence.end();
-    while (iterator != end)
+    for (std::size_t index = multiple_buffer_sequence.offset(); index < 
+      multiple_buffer_sequence.count(); ++index)
     {
       typename MultipleBufferSequence::value_type&
-          multiple_buffer_sequence_op = *iterator;
+          multiple_buffer_sequence_op = multiple_buffer_sequence.at(index);
       const typename MultipleBufferSequence::buffer_sequence_type&
           buffer_sequence = multiple_buffer_sequence_op.
           buffer_sequence();
@@ -634,7 +623,6 @@ public:
       }
       ++operations_executed;
       total_bytes_transferred += bytes_transferred;
-      ++iterator;
     }
     multiple_buffer_sequence.set_operations_executed(operations_executed);
     multiple_buffer_sequence.set_bytes_transferred(total_bytes_transferred);
@@ -774,7 +762,7 @@ public:
   {
     multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (multiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.adjusted_count() > 1)
     {
       return async_initiate<WriteMultipleToken,
         void (asio::error_code, std::size_t, std::size_t)>(
@@ -785,14 +773,13 @@ public:
     // Try to send the buffers one by one in case of missing system call for
     // send_multiple_buffer_sequence...
     detail::mutex lock;
-    typename MultipleBufferSequence::iterator iterator =
-        multiple_buffer_sequence.begin();
-    typename MultipleBufferSequence::iterator end =
-        multiple_buffer_sequence.end();
-    while (iterator != end)
+    multiple_buffer_sequence.set_operations_executed(0);
+    multiple_buffer_sequence.set_bytes_transferred(0);
+    for (std::size_t index = multiple_buffer_sequence.offset(); index < 
+      multiple_buffer_sequence.count(); ++index)
     {
       typename MultipleBufferSequence::value_type&
-          multiple_buffer_sequence_op = *iterator;
+          multiple_buffer_sequence_op = multiple_buffer_sequence.at(index);
       const typename MultipleBufferSequence::buffer_sequence_type&
           buffer_sequence = multiple_buffer_sequence_op.
           buffer_sequence();
@@ -803,19 +790,20 @@ public:
         multiple_buffer_sequence_op.do_complete(bytes_transferred, 
             ec);
         std::size_t operations_executed;
+        std::size_t total_bytes_transferred;
         {
           detail::scoped_lock<detail::mutex> scoped_lock(lock);
           multiple_buffer_sequence.add_operations_executed();
           multiple_buffer_sequence.add_bytes_transferred(bytes_transferred);
           operations_executed = multiple_buffer_sequence.operations_executed();
+          total_bytes_transferred = multiple_buffer_sequence.bytes_transferred();
         }
-        if (operations_executed == multiple_buffer_sequence.count())
+        if (operations_executed == multiple_buffer_sequence.adjusted_count())
         {
-          moved_token(ec, bytes_transferred, multiple_buffer_sequence.count());
+          moved_token(ec, total_bytes_transferred, operations_executed);
         }
       };
       async_send(buffer_sequence, composed_token);
-      ++iterator;
     }
   }
 
@@ -956,7 +944,7 @@ public:
   {
     multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (multiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.adjusted_count() > 1)
     {
       return async_initiate<WriteMultipleToken,
         void (asio::error_code, std::size_t, std::size_t)>(
@@ -967,14 +955,13 @@ public:
     // Try to send the buffers one by one in case of missing system call for
     // send_multiple_buffer_sequence...
     detail::mutex lock;
-    typename MultipleBufferSequence::iterator iterator =
-        multiple_buffer_sequence.begin();
-    typename MultipleBufferSequence::iterator end =
-        multiple_buffer_sequence.end();
-    while (iterator != end)
+    multiple_buffer_sequence.set_operations_executed(0);
+    multiple_buffer_sequence.set_bytes_transferred(0);
+    for (std::size_t index = multiple_buffer_sequence.offset(); index < 
+      multiple_buffer_sequence.count(); ++index)
     {
       typename MultipleBufferSequence::value_type&
-          multiple_buffer_sequence_op = *iterator;
+          multiple_buffer_sequence_op = multiple_buffer_sequence.at(index);
       const typename MultipleBufferSequence::buffer_sequence_type&
           buffer_sequence = multiple_buffer_sequence_op.
           buffer_sequence();
@@ -985,19 +972,20 @@ public:
         multiple_buffer_sequence_op.do_complete(bytes_transferred, 
             ec);
         std::size_t operations_executed;
+        std::size_t total_bytes_transferred;
         {
           detail::scoped_lock<detail::mutex> scoped_lock(lock);
           multiple_buffer_sequence.add_operations_executed();
           multiple_buffer_sequence.add_bytes_transferred(bytes_transferred);
           operations_executed = multiple_buffer_sequence.operations_executed();
+          total_bytes_transferred = multiple_buffer_sequence.bytes_transferred();
         }
-        if (operations_executed == multiple_buffer_sequence.count())
+        if (operations_executed == multiple_buffer_sequence.adjusted_count())
         {
-          moved_token(ec, bytes_transferred, multiple_buffer_sequence.count());
+          moved_token(ec, total_bytes_transferred, operations_executed);
         }
       };
       async_send(buffer_sequence, flags, composed_token);
-      ++iterator;
     }
   }
 
@@ -1063,7 +1051,7 @@ public:
   {
     multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (multiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.adjusted_count() > 1)
     {
       asio::error_code ec;
       std::size_t s = this->impl_.get_service().
@@ -1160,7 +1148,7 @@ public:
   {
     multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (multiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.adjusted_count() > 1)
     {
       asio::error_code ec;
       std::size_t s = this->impl_.get_service().
@@ -1244,7 +1232,7 @@ public:
   {
     multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (multiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.adjusted_count() > 1)
     {
       return this->impl_.get_service().receive_multiple_buffer_sequence(
           this->impl_.get_implementation(), multiple_buffer_sequence, flags, 
@@ -1404,7 +1392,7 @@ public:
   {
     multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (multiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.adjusted_count() > 1)
     {
       return async_initiate<ReadMultipleToken,
         void (asio::error_code, std::size_t, std::size_t)>(
@@ -1572,7 +1560,7 @@ public:
   {
     multiple_buffer_sequence.throw_if_empty();
 #if defined(ASIO_HAS_MULTIPLE_BUFFER_SEQUENCE_IO)
-    if (multiple_buffer_sequence.size() > 1)
+    if (multiple_buffer_sequence.adjusted_count() > 1)
     {
       return async_initiate<ReadMultipleToken,
         void (asio::error_code, std::size_t, std::size_t)>(

@@ -181,6 +181,13 @@ public:
     return offset_;
   }
 
+  std::size_t adjusted_count() const ASIO_NOEXCEPT
+  {
+    auto const size_ = size();
+
+    return size_ > offset_ ? size_ - offset_ : 0;
+  }
+
   std::size_t operations_executed() const ASIO_NOEXCEPT
   {
     return operations_executed_;
