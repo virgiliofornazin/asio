@@ -783,8 +783,6 @@ public:
   {
     throw_if_overflow(count);
 
-    size_type const previous_size = this->size();
-
     this->container_.resize(count);
   }
   
